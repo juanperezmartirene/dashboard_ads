@@ -8,9 +8,14 @@
 
 body {
   background-color: #F9FAFB;
-  color: #111827;
+  color: #4a494f;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: none;
 }
+
+/* UCU color overrides */
+.text-gray-900 { color: #173363 !important; }
+.text-gray-800 { color: #1e3d72 !important; }
 
 /* D3 chart axis text */
 .domain { display: none; }

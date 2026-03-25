@@ -35,19 +35,21 @@ const PAGE_HEROES = {
   },
 }
 
+const NAV_BORDER = 'rgba(255,255,255,0.1)'
+
 export default function Header({ page, onNavigate }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
   const sections = page === 'home' ? HOME_SECTIONS : page === 'metodologia' ? METOD_SECTIONS : []
 
   return (
-    <header style={{ backgroundColor: '#111827' }}>
+    <header style={{ backgroundColor: '#173363' }}>
       {/* Top bar */}
-      <div style={{ borderBottom: '1px solid #1F2937' }}>
+      <div style={{ borderBottom: `1px solid ${NAV_BORDER}` }}>
         <div className="max-w-6xl mx-auto px-4 md:px-8 flex items-center justify-between h-12">
 
           {/* Desktop: identity label */}
-          <span className="hidden sm:block text-xs font-mono tracking-widest text-gray-500 uppercase">
+          <span className="hidden sm:block text-xs font-medium tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>
             Uruguay · Meta · 2023–2024
           </span>
 
@@ -57,11 +59,11 @@ export default function Header({ page, onNavigate }) {
               <button
                 key={link.id}
                 onClick={() => onNavigate(link.id)}
-                className={`px-4 py-2 text-sm font-medium rounded transition-colors ${
-                  page === link.id
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
+                style={page === link.id
+                  ? { backgroundColor: '#0096D1', color: '#fff' }
+                  : { color: 'rgba(255,255,255,0.65)' }
+                }
+                className="px-4 py-2 text-sm font-medium rounded transition-colors hover:bg-white/10"
               >
                 {link.label}
               </button>
@@ -70,12 +72,13 @@ export default function Header({ page, onNavigate }) {
 
           {/* Mobile: label + hamburger */}
           <div className="flex sm:hidden items-center justify-between w-full">
-            <span className="text-xs font-mono tracking-widest text-gray-500 uppercase">
+            <span className="text-xs font-medium tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>
               Uruguay · Meta · 2024
             </span>
             <button
               onClick={() => setMenuOpen(o => !o)}
-              className="text-gray-400 hover:text-white p-2 -mr-2"
+              className="p-2 -mr-2"
+              style={{ color: 'rgba(255,255,255,0.7)' }}
               aria-label="Menú"
             >
               {menuOpen ? (
@@ -91,18 +94,15 @@ export default function Header({ page, onNavigate }) {
           </div>
         </div>
 
-        {/* Mobile dropdown menu */}
+        {/* Mobile dropdown */}
         {menuOpen && (
-          <div className="sm:hidden border-t border-gray-800 px-4 py-2 bg-gray-900">
+          <div className="sm:hidden px-4 py-2" style={{ borderTop: `1px solid ${NAV_BORDER}`, backgroundColor: '#0f2347' }}>
             {PAGE_LINKS.map(link => (
               <button
                 key={link.id}
                 onClick={() => { onNavigate(link.id); setMenuOpen(false) }}
-                className={`block w-full text-left px-4 py-3 text-sm font-medium rounded transition-colors mb-1 ${
-                  page === link.id
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
+                style={page === link.id ? { backgroundColor: '#0096D1', color: '#fff' } : { color: 'rgba(255,255,255,0.7)' }}
+                className="block w-full text-left px-4 py-3 text-sm font-medium rounded transition-colors mb-1 hover:bg-white/10"
               >
                 {link.label}
               </button>
@@ -116,20 +116,23 @@ export default function Header({ page, onNavigate }) {
         <h1 className="font-semibold text-white leading-tight text-xl md:text-2xl" style={{ maxWidth: '36rem' }}>
           {hero.title}
         </h1>
-        <p className="text-gray-400 text-sm mt-3 max-w-xl leading-relaxed">
+        <p className="text-sm mt-3 max-w-xl leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)' }}>
           {hero.sub}
         </p>
       </div>
 
-      {/* Section anchor nav — pill buttons */}
+      {/* Section anchor nav — teal pills */}
       {sections.length > 0 && (
-        <nav style={{ borderTop: '1px solid #1F2937' }} className="max-w-6xl mx-auto px-4 md:px-8">
+        <nav style={{ borderTop: `1px solid ${NAV_BORDER}` }} className="max-w-6xl mx-auto px-4 md:px-8">
           <ul className="flex gap-2 overflow-x-auto py-3" style={{ scrollbarWidth: 'none' }}>
             {sections.map(link => (
               <li key={link.href} className="shrink-0">
                 <a
                   href={link.href}
-                  className="block px-4 py-2 text-xs font-semibold text-gray-200 bg-gray-800 hover:bg-gray-600 hover:text-white rounded-full border border-gray-700 hover:border-gray-500 transition-colors whitespace-nowrap"
+                  className="block px-4 py-2 text-xs font-semibold text-white rounded-full transition-colors whitespace-nowrap"
+                  style={{ backgroundColor: '#0096D1', opacity: 0.9 }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '0.9'}
                 >
                   {link.label}
                 </a>

@@ -26,7 +26,7 @@ function Section({ id, gray, children }) {
 
 function SectionMeta({ num, label }) {
   return (
-    <p className="text-xs font-mono tracking-widest text-gray-400 mb-2 uppercase">
+    <p className="text-xs font-medium tracking-widest mb-2 uppercase" style={{ color: '#0096D1' }}>
       {String(num).padStart(2, '0')} — {label}
     </p>
   )

@@ -4,8 +4,17 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
+        sans: ['"Asap"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
         mono: ['"Courier New"', 'Courier', 'monospace'],
+      },
+      colors: {
+        ucu: {
+          navy:  '#173363',
+          teal:  '#0096D1',
+          teal2: '#0eafb1',
+          gold:  '#CFAE38',
+          text:  '#4a494f',
+        },
       },
     },
   },
