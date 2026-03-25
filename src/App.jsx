@@ -17,9 +17,9 @@ function Section({ id, gray, children }) {
     <section
       id={id}
       style={{ backgroundColor: gray ? '#F9FAFB' : '#FFFFFF' }}
-      className="py-14 border-t border-gray-100"
+      className="py-10 md:py-14 border-t border-gray-100"
     >
-      <div className="max-w-6xl mx-auto px-8">{children}</div>
+      <div className="max-w-6xl mx-auto px-4 md:px-8">{children}</div>
     </section>
   )
 }
@@ -59,11 +59,11 @@ function HomeResultados() {
   return (
     <Section id="resultados" gray>
       <SectionMeta num={1} label="Resultados" />
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
         <h2 className="text-2xl font-semibold text-gray-900">
           Los datos, de un vistazo
         </h2>
-        <p className="text-xs text-gray-400 max-w-xs text-right leading-relaxed">
+        <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
           Corpus completo · Oct 2023 – Nov 2024 · Clasificación automática ROUBERTa (F1: 0,78)
         </p>
       </div>
@@ -84,7 +84,7 @@ function HomeTemporal() {
   return (
     <Section id="temporal">
       <SectionMeta num={2} label="Evolución temporal" />
-      <div className="grid grid-cols-2 gap-16 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             La campaña en el tiempo
@@ -128,7 +128,7 @@ function HomePartidosTerritorial() {
         Distintos énfasis, distintas geografías
       </h2>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ChartBox
           title="Distribución por tipo según partido — % de anuncios"
           sub="Cada celda muestra la proporción de anuncios de ese tipo en el corpus de ese partido. Clasificación multi-etiqueta."
@@ -206,7 +206,7 @@ function MetodEstudio() {
   return (
     <Section id="estudio">
       <SectionMeta num={1} label="El estudio" />
-      <div className="grid grid-cols-2 gap-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-5">
             Sobre este proyecto
@@ -301,7 +301,7 @@ function MetodTipologia() {
   return (
     <Section id="tipologia" gray>
       <SectionMeta num={2} label="La tipología" />
-      <div className="grid grid-cols-2 gap-10 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 mb-10">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Seis funciones comunicacionales
@@ -324,7 +324,7 @@ function MetodTipologia() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10">
         {TYPE_DEFS.map(t => (
           <div
             key={t.tipo}
@@ -369,7 +369,7 @@ function MetodCorpus() {
   return (
     <Section id="corpus">
       <SectionMeta num={3} label="El corpus" />
-      <div className="grid grid-cols-2 gap-16 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-5">
             Un corpus de escala electoral completa
@@ -410,13 +410,13 @@ function MetodCorpus() {
         </div>
       </div>
 
-      <div className="bg-gray-50 border border-gray-200 rounded-sm px-8 py-7">
+      <div className="bg-gray-50 border border-gray-200 rounded-sm px-4 md:px-8 py-6 md:py-7">
         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-8">
           Línea de tiempo electoral
         </h3>
         <div className="relative">
           <div className="absolute top-3 left-0 right-0 h-px bg-gray-200" />
-          <div className="grid grid-cols-4 gap-4 relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative">
             {TIMELINE.map((e, i) => (
               <div key={i} className="text-center">
                 <div className="w-3 h-3 rounded-full bg-gray-700 mx-auto mb-3" />
@@ -487,7 +487,7 @@ function PageEquipo() {
         </Prose>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 mb-14">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-14">
         {TEAM.map((m, i) => (
           <div
             key={i}
@@ -508,7 +508,7 @@ function PageEquipo() {
       </div>
 
       {/* Colaboración y contacto */}
-      <div className="border-t border-gray-100 pt-10 grid grid-cols-2 gap-16">
+      <div className="border-t border-gray-100 pt-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
         <div>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
             Contexto institucional
