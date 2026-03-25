@@ -27,19 +27,19 @@ const CARDS = [
 
 export default function KPICards() {
   return (
-    <div className="grid grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
       {CARDS.map((card) => (
         <div
           key={card.label}
-          className="bg-white border border-gray-200 rounded-sm px-6 py-5"
+          className="bg-white border border-gray-200 rounded-sm px-4 py-4 md:px-6 md:py-5"
           style={{ borderTop: `3px solid ${card.accent}` }}
         >
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-2 leading-snug">
             {card.label}
           </p>
           <p
-            className="font-mono font-bold text-gray-900 leading-none mb-2"
-            style={{ fontSize: '2rem' }}
+            className="font-mono font-bold text-gray-900 leading-none mb-2 truncate"
+            style={{ fontSize: '1.6rem' }}
           >
             {card.value}
           </p>

@@ -7,8 +7,8 @@ const LINKS = [
 export default function Footer({ page, onNavigate }) {
   return (
     <footer style={{ backgroundColor: '#111827' }} className="mt-0">
-      <div className="max-w-6xl mx-auto px-8 pt-12 pb-8">
-        <div className="grid grid-cols-3 gap-10 mb-10">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-10 md:pt-12 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 mb-10">
 
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
@@ -51,7 +51,7 @@ export default function Footer({ page, onNavigate }) {
 
         </div>
 
-        <div className="pt-6 border-t border-gray-800 flex items-center justify-between">
+        <div className="pt-6 border-t border-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex gap-4">
             {LINKS.map(link => (
               <button
@@ -67,7 +67,7 @@ export default function Footer({ page, onNavigate }) {
               </button>
             ))}
           </div>
-          <div className="flex gap-6 text-xs text-gray-600">
+          <div className="flex flex-col sm:flex-row gap-1 sm:gap-6 text-xs text-gray-600">
             <span>Datos sintéticos · Última actualización: 24/03/2026</span>
             <span>Uruguay · Ciclo electoral 2023–2024</span>
           </div>

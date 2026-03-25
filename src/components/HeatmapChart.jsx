@@ -31,7 +31,8 @@ export default function HeatmapChart({ parties }) {
   useEffect(() => {
     if (!parties?.length || !svgRef.current || !containerRef.current) return
 
-    const W = containerRef.current.clientWidth
+    const MIN_W = 480
+    const W = Math.max(containerRef.current.clientWidth, MIN_W)
     const margin = { top: 36, right: 12, bottom: 12, left: 128 }
     const cols = TYPE_KEYS.length
     const rows = parties.length
