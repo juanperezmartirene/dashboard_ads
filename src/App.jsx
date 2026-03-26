@@ -11,7 +11,13 @@ import { GastoComparativoGlobal, GastoMetaVsTV } from './components/GastoCompara
 import InternasTable from './components/InternasTable'
 import NacionalesBar from './components/NacionalesBar'
 import TopCuentas from './components/TopCuentas'
-import { AD_TYPES, PARTIES, TIME_SERIES, DEPARTAMENTOS, TABLE_DATA, ETAPAS } from './data/mockData'
+import { TIME_SERIES, TABLE_DATA, ETAPAS } from './data/mockData'
+import { computeAdTypes, computeHeatmap, computeDepartamentosForChart } from './data/computeStats'
+
+// ─── Module-level computed stats (update automatically when TABLE_DATA changes) ─
+const AD_TYPES      = computeAdTypes(TABLE_DATA)
+const PARTIES       = computeHeatmap(TABLE_DATA)
+const DEPARTAMENTOS = computeDepartamentosForChart(TABLE_DATA)
 import {
   GASTO_META, GASTO_PARTIDO, GASTO_TOTAL_COMPARATIVO,
   INTERNAS_CANDIDATOS, NACIONALES_PARTIDOS, TOP_CUENTAS,
@@ -736,13 +742,11 @@ export default function App() {
   const filteredTable = useMemo(() => {
     let rows = TABLE_DATA
     if (selectedParties.length > 0)
-      rows = rows.filter(r => selectedParties.includes(r.partido))
-    if (selectedEtapa !== 'Todas')
-      rows = rows.filter(r => r.etapa === selectedEtapa)
+      rows = rows.filter(r => selectedParties.includes(r.part_org))
     if (selectedTerritorio.length > 0)
-      rows = rows.filter(r => selectedTerritorio.includes(r.territorio))
+      rows = rows.filter(r => selectedTerritorio.includes(r.departamento_nacional))
     return rows
-  }, [selectedParties, selectedEtapa, selectedTerritorio])
+  }, [selectedParties, selectedTerritorio])
 
   const navigate = (target) => {
     setPage(target)

@@ -1,156 +1,238 @@
-// ─── Tipos de anuncio ────────────────────────────────────────────────────────
-export const AD_TYPES = [
-  { tipo: 'Promoción',  cantidad: 10438, pct: 86.2, f1: 0.86, color: '#6366F1' },
-  { tipo: 'CTA',        cantidad:  7536, pct: 62.3, f1: 0.68, color: '#3B82F6' },
-  { tipo: 'Tema',       cantidad:  5782, pct: 47.8, f1: 0.76, color: '#10B981' },
-  { tipo: 'Imagen',     cantidad:  3226, pct: 26.7, f1: 0.65, color: '#F59E0B' },
-  { tipo: 'Ceremonial', cantidad:  2131, pct: 17.6, f1: 0.75, color: '#8B5CF6' },
-  { tipo: 'Ataque',     cantidad:  1398, pct: 11.6, f1: 0.51, color: '#EF4444' },
+// ─── Estructura de columnas reales esperadas ──────────────────────────────────
+// page_name | demographic_distribution | delivery_by_region | part_org |
+// pre_pres  | lista_sector_candidato   | departamento_nacional | text_body |
+// advocacy  | attack | image | issue | call_to_action | ceremonial  (binarias 0/1)
+//
+// COLUMNAS PENDIENTES (no disponibles aún, se mockean):
+//   fecha        → necesaria para TIME_SERIES
+//   gasto        → necesaria para gastoData individual
+//   impresiones  → necesaria para gastoData individual
+
+// ─── Configuración de partidos y candidatos (pesos basados en paper) ──────────
+const PARTIDO_CONFIG = [
+  {
+    part_org: 'Partido Nacional',
+    weight: 0.35,
+    precandidatos: [
+      { nombre: 'Álvaro Delgado',  weight: 0.59 },
+      { nombre: 'Laura Raffo',     weight: 0.31 },
+      { nombre: 'Jorge Gandini',   weight: 0.07 },
+      { nombre: 'Otro PN',         weight: 0.03 },
+    ],
+    // Perfil de tipología (probabilidad de cada tipo)
+    tipologia: { advocacy: 0.87, attack: 0.05, image: 0.09, issue: 0.15, call_to_action: 0.62, ceremonial: 0.04 },
+    paginas: ['Partido Nacional', 'Álvaro Delgado', 'Laura Raffo Presidente', 'PN Campaña 2024', 'Blancos con Ojeda'],
+  },
+  {
+    part_org: 'Frente Amplio',
+    weight: 0.25,
+    precandidatos: [
+      { nombre: 'Yamandú Orsi',   weight: 0.44 },
+      { nombre: 'Carolina Cosse', weight: 0.37 },
+      { nombre: 'Andrés Lima',    weight: 0.15 },
+      { nombre: 'Otro FA',        weight: 0.04 },
+    ],
+    tipologia: { advocacy: 0.85, attack: 0.06, image: 0.07, issue: 0.20, call_to_action: 0.65, ceremonial: 0.05 },
+    paginas: ['Frente Amplio', 'Yamandú Orsi Presidente', 'Carolina Cosse', 'MPP', 'Convocatoria Seregnista'],
+  },
+  {
+    part_org: 'Partido Colorado',
+    weight: 0.28,
+    precandidatos: [
+      { nombre: 'Andrés Ojeda',      weight: 0.30 },
+      { nombre: 'Gabriel Gurmendez', weight: 0.31 },
+      { nombre: 'Robert Silva',      weight: 0.19 },
+      { nombre: 'Tabaré Viera',      weight: 0.20 },
+    ],
+    tipologia: { advocacy: 0.88, attack: 0.04, image: 0.12, issue: 0.17, call_to_action: 0.60, ceremonial: 0.06 },
+    paginas: ['Partido Colorado', 'Andrés Ojeda Presidente', 'Gurmendez Colorado', 'Colorado 2024', 'Blancos con Ojeda'],
+  },
+  {
+    part_org: 'Otros',
+    weight: 0.12,
+    precandidatos: [
+      { nombre: 'Pablo Mieres',      weight: 0.40 },
+      { nombre: 'Guido Manini Ríos', weight: 0.35 },
+      { nombre: 'Otro',              weight: 0.25 },
+    ],
+    tipologia: { advocacy: 0.80, attack: 0.08, image: 0.10, issue: 0.25, call_to_action: 0.55, ceremonial: 0.03 },
+    paginas: ['Partido Independiente', 'Cabildo Abierto', 'Manini Ríos', 'Lista 40 Artigas', 'Espacio Cuarenta'],
+  },
 ]
 
-// ─── Partidos ─────────────────────────────────────────────────────────────────
-export const PARTIES = [
-  { nombre: 'Frente Amplio',    cantidad: 3150, pct: 26, promocion: 33, ataque: 6,  tema: 19, imagen: 7,  cta: 25, ceremonial: 5 },
-  { nombre: 'Partido Nacional', cantidad: 4200, pct: 35, promocion: 35, ataque: 3,  tema: 13, imagen: 9,  cta: 23, ceremonial: 4 },
-  { nombre: 'Partido Colorado', cantidad: 3400, pct: 28, promocion: 36, ataque: 4,  tema: 17, imagen: 12, cta: 24, ceremonial: 6 },
-  { nombre: 'Otros',            cantidad: 1346, pct: 11, promocion: 34, ataque: 5,  tema: 23, imagen: 6,  cta: 29, ceremonial: 3 },
+const DEPARTAMENTOS_UY = [
+  'Montevideo', 'Canelones', 'Maldonado', 'Salto', 'Paysandú',
+  'Rivera', 'Colonia', 'San José', 'Rocha', 'Tacuarembó',
+  'Artigas', 'Florida', 'Río Negro', 'Cerro Largo', 'Durazno',
+  'Soriano', 'Lavalleja', 'Flores', 'Treinta y Tres',
 ]
 
-// ─── Etapas electorales ───────────────────────────────────────────────────────
+const TEXTOS_MOCK = [
+  'Uruguay merece un gobierno que trabaje para todos. Sumate al cambio que el país necesita.',
+  'Defendemos la educación pública, la seguridad y el trabajo de los uruguayos.',
+  'El trabajo es el motor del progreso. Tu voto construye el futuro del país.',
+  'Nuestra propuesta para la salud y la vivienda ya está lista. Conocela.',
+  'Juntos construimos un Uruguay mejor para las próximas generaciones.',
+  'La transparencia y la honestidad guían nuestro programa de gobierno.',
+  'Invertimos en infraestructura para conectar todo el territorio nacional.',
+  'Protegemos a los jubilados y pensionistas con políticas concretas.',
+  'La seguridad pública es nuestra prioridad. Tenemos un plan.',
+  'Compartí este mensaje. Uruguay necesita un liderazgo comprometido.',
+  'Votá con convicción. Este es el momento de hacer historia.',
+  'El interior también importa. Nuestras propuestas llegan a cada rincón.',
+  'Educación de calidad para todos los niños y jóvenes del país.',
+  'Economía fuerte, empleos estables, futuro asegurado para tu familia.',
+  'Escuchamos a los vecinos. Tu opinión define nuestro programa.',
+]
+
+const SECTORES_MOCK = [
+  'Lista 2121', 'Lista 609', 'Lista 2000', 'Lista 711', 'Lista 40',
+  'MPP', 'Espacio 609', 'Convocatoria Seregnista', 'Frente Líber Seregni',
+  'Renovación y Cambio', 'Corriente de Acción', 'Herrerismo',
+]
+
+// ─── LCG determinista ─────────────────────────────────────────────────────────
+let seed = 42
+const rand = () => {
+  seed = (seed * 1664525 + 1013904223) & 0x7fffffff
+  return seed / 0x7fffffff
+}
+const pick = (arr) => arr[Math.floor(rand() * arr.length)]
+const weightedPick = (items) => {
+  const r = rand()
+  let acc = 0
+  for (const item of items) {
+    acc += item.weight
+    if (r < acc) return item
+  }
+  return items[items.length - 1]
+}
+
+// ─── Genera demographic_distribution realista ─────────────────────────────────
+function genDemographic() {
+  const ages = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+  // Perfil base: concentración en 25-34 (paper finding)
+  const base = [0.02, 0.10, 0.28, 0.22, 0.16, 0.12, 0.10]
+  const result = []
+  ages.forEach((age, i) => {
+    const noise = (rand() - 0.5) * 0.06
+    const pct = Math.max(0.01, base[i] + noise)
+    // Leve sesgo de mujeres en 25-34 (paper finding)
+    const femaleBias = age === '25-34' ? 0.03 : age === '65+' ? -0.04 : 0
+    result.push({ age, gender: 'male',   percentage: +(pct * (0.5 - femaleBias / 2)).toFixed(4) })
+    result.push({ age, gender: 'female', percentage: +(pct * (0.5 + femaleBias / 2)).toFixed(4) })
+  })
+  return result
+}
+
+// ─── Genera delivery_by_region realista ───────────────────────────────────────
+function genDelivery(departamentoNacional) {
+  if (departamentoNacional !== 'Nacional') {
+    // Anuncio geográfico: concentrado en ese departamento
+    const result = [{ region: departamentoNacional, percentage: 0.85 }]
+    const resto = DEPARTAMENTOS_UY.filter(d => d !== departamentoNacional).slice(0, 3)
+    const restoPct = 0.15 / resto.length
+    resto.forEach(d => result.push({ region: d, percentage: +restoPct.toFixed(4) }))
+    return result
+  }
+  // Anuncio nacional: distribución proporcional a población
+  const weights = [0.42, 0.16, 0.07, 0.05, 0.04, 0.04, 0.03, 0.03, 0.02, 0.02,
+                   0.02, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+  return DEPARTAMENTOS_UY.map((d, i) => ({
+    region: d,
+    percentage: +(weights[i] * (0.85 + rand() * 0.30)).toFixed(4),
+  }))
+}
+
+// ─── Generador principal de anuncios individuales ─────────────────────────────
+function generateAds(n) {
+  seed = 42 // reset para determinismo
+  return Array.from({ length: n }, (_, id) => {
+    const partido      = weightedPick(PARTIDO_CONFIG)
+    const precandidato = weightedPick(partido.precandidatos)
+    const esNacional   = rand() > 0.40
+    const depto        = esNacional ? 'Nacional' : pick(DEPARTAMENTOS_UY)
+    const tipo         = partido.tipologia
+
+    // Binarias con probabilidad del partido + ruido individual
+    const advocacy      = rand() < tipo.advocacy      ? 1 : 0
+    const attack        = rand() < tipo.attack        ? 1 : 0
+    const image         = rand() < tipo.image         ? 1 : 0
+    const issue         = rand() < tipo.issue         ? 1 : 0
+    const call_to_action = rand() < tipo.call_to_action ? 1 : 0
+    const ceremonial    = rand() < tipo.ceremonial    ? 1 : 0
+
+    // Fecha (mock — reemplazar con columna real)
+    const startMs   = new Date('2023-10-01').getTime()
+    const endMs     = new Date('2024-11-24').getTime()
+    const fecha     = new Date(startMs + rand() * (endMs - startMs))
+      .toISOString().slice(0, 10)
+
+    // Gasto e impresiones (mock — reemplazar con columnas reales)
+    const gastoMin  = Math.floor(rand() * 800 + 100)
+    const gastoMax  = gastoMin + Math.floor(rand() * 600 + 100)
+    const impMin    = Math.floor(rand() * 80000 + 5000)
+    const impMax    = impMin + Math.floor(rand() * 40000 + 5000)
+
+    return {
+      id,
+      page_name:                 pick(partido.paginas),
+      demographic_distribution:  genDemographic(),
+      delivery_by_region:        genDelivery(depto),
+      part_org:                  partido.part_org,
+      pre_pres:                  precandidato.nombre,
+      lista_sector_candidato:    pick(SECTORES_MOCK),
+      departamento_nacional:     depto,
+      text_body:                 pick(TEXTOS_MOCK),
+      // Binarias por tipología
+      advocacy,
+      attack,
+      image,
+      issue,
+      call_to_action,
+      ceremonial,
+      // Columnas mock (reemplazar con datos reales)
+      _fecha:       fecha,
+      _gasto:       `$${gastoMin}–$${gastoMax}`,
+      _impresiones: Math.round((impMin + impMax) / 2),
+    }
+  })
+}
+
+// ─── Exports ──────────────────────────────────────────────────────────────────
+export const TABLE_DATA = generateAds(500)
+
+// Etapas electorales (estáticas — no dependen de filas individuales)
 export const ETAPAS = [
-  { nombre: 'Internas',   fecha: '30 Jun 2024',  cantidad: 6192, marker: new Date('2024-06-30') },
-  { nombre: 'Nacionales', fecha: '27 Oct 2024',  cantidad: 5547, marker: new Date('2024-10-27') },
+  { nombre: 'Internas',   fecha: '30 Jun 2024',  cantidad: 6955, marker: new Date('2024-06-30') },
+  { nombre: 'Nacionales', fecha: '27 Oct 2024',  cantidad: 6021, marker: new Date('2024-10-27') },
   { nombre: 'Ballottage', fecha: '24 Nov 2024',  cantidad:  357, marker: new Date('2024-11-24') },
 ]
 
-// ─── Departamentos ────────────────────────────────────────────────────────────
-export const DEPARTAMENTOS = [
-  { nombre: 'Montevideo',     impresiones: 542000, pct: 45.2 },
-  { nombre: 'Canelones',      impresiones: 187000, pct: 15.6 },
-  { nombre: 'Maldonado',      impresiones:  89000, pct:  7.4 },
-  { nombre: 'Salto',          impresiones:  67000, pct:  5.6 },
-  { nombre: 'Paysandú',       impresiones:  54000, pct:  4.5 },
-  { nombre: 'Rivera',         impresiones:  43000, pct:  3.6 },
-  { nombre: 'Colonia',        impresiones:  38000, pct:  3.2 },
-  { nombre: 'San José',       impresiones:  35000, pct:  2.9 },
-  { nombre: 'Rocha',          impresiones:  28000, pct:  2.3 },
-  { nombre: 'Tacuarembó',     impresiones:  22000, pct:  1.8 },
-  { nombre: 'Artigas',        impresiones:  18000, pct:  1.5 },
-  { nombre: 'Florida',        impresiones:  15000, pct:  1.2 },
-  { nombre: 'Río Negro',      impresiones:  12000, pct:  1.0 },
-  { nombre: 'Cerro Largo',    impresiones:  11000, pct:  0.9 },
-  { nombre: 'Durazno',        impresiones:   9000, pct:  0.7 },
-  { nombre: 'Soriano',        impresiones:   8000, pct:  0.7 },
-  { nombre: 'Lavalleja',      impresiones:   7000, pct:  0.6 },
-  { nombre: 'Flores',         impresiones:   5000, pct:  0.4 },
-  { nombre: 'Treinta y Tres', impresiones:   4000, pct:  0.3 },
-]
-
-// ─── Serie temporal semanal (determinista) ────────────────────────────────────
+// TIME_SERIES: mock hasta que se disponga de columna fecha real
 function genTimeSeries() {
-  // Simple LCG for deterministic "random" values
-  let seed = 42
-  const rand = () => {
-    seed = (seed * 1664525 + 1013904223) & 0x7fffffff
-    return seed / 0x7fffffff
-  }
-
+  seed = 99
   const rows = []
   const start = new Date('2023-10-02')
   const end   = new Date('2024-11-25')
-  let cur = new Date(start)
-  let i = 0
-
+  let cur = new Date(start), i = 0
   while (cur <= end) {
     const phaseMult = 1 + i * 0.025
-    const isElection = cur >= new Date('2024-09-01') && cur <= new Date('2024-11-05')
-    const peak = isElection ? 2.6 : 1.0
+    const isPeak = cur >= new Date('2024-09-01') && cur <= new Date('2024-11-05')
+    const peak = isPeak ? 2.6 : 1.0
     const n = () => 0.78 + rand() * 0.44
-
     rows.push({
-      fecha:        cur.toISOString().slice(0, 10),
-      Promoción:    Math.round(118 * phaseMult * peak * n()),
-      CTA:          Math.round( 88 * phaseMult * peak * n()),
-      Tema:         Math.round( 63 * phaseMult * peak * n()),
-      Imagen:       Math.round( 36 * phaseMult * peak * n()),
-      Ceremonial:   Math.round( 21 * phaseMult * peak * n()),
-      Ataque:       Math.round( 13 * phaseMult * peak * n()),
+      fecha:      cur.toISOString().slice(0, 10),
+      Promoción:  Math.round(118 * phaseMult * peak * n()),
+      CTA:        Math.round( 88 * phaseMult * peak * n()),
+      Tema:       Math.round( 63 * phaseMult * peak * n()),
+      Imagen:     Math.round( 36 * phaseMult * peak * n()),
+      Ceremonial: Math.round( 21 * phaseMult * peak * n()),
+      Ataque:     Math.round( 13 * phaseMult * peak * n()),
     })
-
     cur.setDate(cur.getDate() + 7)
     i++
   }
   return rows
 }
-
 export const TIME_SERIES = genTimeSeries()
-
-// ─── Datos tabla (200 filas, deterministas) ───────────────────────────────────
-function genTableData() {
-  const todosLosTipos = ['Promoción', 'CTA', 'Tema', 'Imagen', 'Ceremonial', 'Ataque']
-  const partidos   = ['Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
-  const etapas     = ['Internas', 'Nacionales', 'Ballottage']
-  const territorios= ['Nacional', 'Montevideo', 'Interior']
-
-  const paginas = {
-    'Frente Amplio':    ['Frente Amplio', 'FA Campaña 2024', 'Orsi Presidente'],
-    'Partido Nacional': ['Partido Nacional', 'Álvarez Paz - PN', 'PN Campaña'],
-    'Partido Colorado': ['Partido Colorado', 'Sanguinetti Vuelve', 'Colorado 2024'],
-    'Otros':            ['Cabildo Abierto', 'Partido Independiente', 'Frente Amplio Regional'],
-  }
-
-  const textos = [
-    'Uruguay merece un gobierno que trabaje para todos. Sumate al cambio.',
-    'Defendemos la educación pública y la seguridad de los uruguayos.',
-    'El trabajo es el motor del progreso. Vota con convicción.',
-    'Nuestra propuesta para la salud y la vivienda está lista.',
-    'Juntos construimos un Uruguay mejor para las próximas generaciones.',
-    'La transparencia y la honestidad guían nuestro programa de gobierno.',
-    'Invertimos en infraestructura para conectar el Uruguay profundo.',
-    'Protegemos a los jubilados y pensionistas con políticas concretas.',
-    'La seguridad pública es nuestra prioridad número uno.',
-    'Compartí este mensaje. Uruguay necesita líderes comprometidos.',
-  ]
-
-  const alcances = ['Nacional', 'Montevideo', 'Interior', 'Canelones', 'Maldonado']
-
-  let seed = 99
-  const rand = () => {
-    seed = (seed * 1664525 + 1013904223) & 0x7fffffff
-    return seed / 0x7fffffff
-  }
-  const pick = (arr) => arr[Math.floor(rand() * arr.length)]
-  const pickN = (arr, n) => {
-    const shuffled = [...arr].sort(() => rand() - 0.5)
-    return shuffled.slice(0, n)
-  }
-
-  return Array.from({ length: 200 }, (_, i) => {
-    const partido = pick(partidos)
-    const numTipos = Math.floor(rand() * 2) + 1
-    const tipos = pickN(todosLosTipos, numTipos)
-    return {
-      id:           i + 1,
-      nombre_pagina: pick(paginas[partido]),
-      partido,
-      texto:        pick(textos),
-      alcance:      pick(alcances),
-      tipos,
-      tipo:         tipos[0], // compatibilidad con filtros existentes
-      etapa:        pick(etapas),
-      territorio:   pick(territorios),
-      gasto:        `$${(Math.floor(rand() * 40) + 5) * 100}–$${(Math.floor(rand() * 60) + 50) * 100}`,
-      impresiones:  Math.floor(rand() * 90000) + 10000,
-    }
-  })
-}
-
-export const TABLE_DATA = genTableData()
-
-export const METADATA = {
-  total_anuncios: 12096,
-  periodo:        'Oct 2023 – Nov 2024',
-  modelo:         'ROUBERTa',
-  f1_score:       0.78,
-  ultima_act:     '24/03/2026',
-}

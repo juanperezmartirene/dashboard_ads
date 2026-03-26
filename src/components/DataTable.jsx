@@ -22,13 +22,13 @@ const TYPE_COLORS = {
 const PARTIDOS = ['Todos', 'Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
 
 const COLS = [
-  { key: 'nombre_pagina', label: 'Nombre de página', sortable: true  },
-  { key: 'partido',       label: 'Partido',          sortable: true  },
-  { key: 'texto',         label: 'Texto',            sortable: false },
-  { key: 'alcance',       label: 'Alcance',          sortable: true  },
-  { key: 'tipos',         label: 'Tipos',            sortable: false },
-  { key: 'gasto',         label: 'Gasto Est.',       sortable: false },
-  { key: 'impresiones',   label: 'Impresiones',      sortable: true  },
+  { key: 'page_name',             label: 'Nombre de página', sortable: true  },
+  { key: 'part_org',              label: 'Partido',          sortable: true  },
+  { key: 'text_body',             label: 'Texto',            sortable: false },
+  { key: 'departamento_nacional', label: 'Alcance',          sortable: true  },
+  { key: 'tipos',                 label: 'Tipos',            sortable: false },
+  { key: '_gasto',                label: 'Gasto Est.',       sortable: false },
+  { key: '_impresiones',          label: 'Impresiones',      sortable: true  },
 ]
 
 const PAGE_SIZE = 20
@@ -45,14 +45,14 @@ export default function DataTable({ data }) {
     if (search.trim()) {
       const q = search.toLowerCase()
       rows = rows.filter(r =>
-        (r.nombre_pagina || '').toLowerCase().includes(q) ||
-        (r.texto || '').toLowerCase().includes(q) ||
-        (r.partido || '').toLowerCase().includes(q)
+        (r.page_name  || '').toLowerCase().includes(q) ||
+        (r.text_body  || '').toLowerCase().includes(q) ||
+        (r.part_org   || '').toLowerCase().includes(q)
       )
     }
 
     if (partido !== 'Todos') {
-      rows = rows.filter(r => r.partido === partido)
+      rows = rows.filter(r => r.part_org === partido)
     }
 
     if (sort.key) {
@@ -152,33 +152,40 @@ export default function DataTable({ data }) {
 
                 {/* Nombre de página */}
                 <TableCell className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                  {row.nombre_pagina || '—'}
+                  {row.page_name || '—'}
                 </TableCell>
 
                 {/* Partido */}
                 <TableCell className="text-sm text-gray-600 whitespace-nowrap">
-                  {row.partido}
+                  {row.part_org || '—'}
                 </TableCell>
 
                 {/* Texto — truncado con tooltip nativo */}
                 <TableCell className="text-sm text-gray-500 max-w-[220px]">
                   <span
                     className="block truncate"
-                    title={row.texto}
+                    title={row.text_body}
                   >
-                    {row.texto || '—'}
+                    {row.text_body || '—'}
                   </span>
                 </TableCell>
 
                 {/* Alcance */}
                 <TableCell className="text-sm text-gray-600 whitespace-nowrap">
-                  {row.alcance || '—'}
+                  {row.departamento_nacional || '—'}
                 </TableCell>
 
-                {/* Tipos — badges */}
+                {/* Tipos — badges derivados de columnas binarias */}
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {(Array.isArray(row.tipos) ? row.tipos : [row.tipo]).filter(Boolean).map(t => {
+                    {[
+                      row.advocacy       === 1 && 'Promoción',
+                      row.attack         === 1 && 'Ataque',
+                      row.call_to_action === 1 && 'CTA',
+                      row.issue          === 1 && 'Tema',
+                      row.image          === 1 && 'Imagen',
+                      row.ceremonial     === 1 && 'Ceremonial',
+                    ].filter(Boolean).map(t => {
                       const c = TYPE_COLORS[t]
                       return (
                         <Badge
@@ -196,14 +203,14 @@ export default function DataTable({ data }) {
 
                 {/* Gasto */}
                 <TableCell className="text-sm text-gray-600 whitespace-nowrap font-mono">
-                  {row.gasto || '—'}
+                  {row._gasto || '—'}
                 </TableCell>
 
                 {/* Impresiones */}
                 <TableCell className="text-sm text-gray-600 whitespace-nowrap font-mono text-right">
-                  {typeof row.impresiones === 'number'
-                    ? row.impresiones.toLocaleString('es-UY')
-                    : row.impresiones || '—'}
+                  {typeof row._impresiones === 'number'
+                    ? row._impresiones.toLocaleString('es-UY')
+                    : row._impresiones || '—'}
                 </TableCell>
 
               </TableRow>
