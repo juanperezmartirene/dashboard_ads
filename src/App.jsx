@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import Header from './components/Header'
-import KPICards from './components/KPICards'
 import FilterPanel from './components/FilterPanel'
 import HorizontalBarChart from './components/HorizontalBarChart'
 import StackedAreaChart from './components/StackedAreaChart'
@@ -67,8 +66,6 @@ function HomeResultados() {
           Corpus completo · Oct 2023 – Nov 2024 · Clasificación automática ROUBERTa (F1: 0,78)
         </p>
       </div>
-
-      <KPICards />
 
       <ChartBox
         title="Distribución por tipo de anuncio"

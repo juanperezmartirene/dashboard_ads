@@ -87,11 +87,32 @@ export const TIME_SERIES = genTimeSeries()
 
 // ─── Datos tabla (200 filas, deterministas) ───────────────────────────────────
 function genTableData() {
-  const tipos      = ['Promoción', 'CTA', 'Tema', 'Imagen', 'Ceremonial', 'Ataque']
+  const todosLosTipos = ['Promoción', 'CTA', 'Tema', 'Imagen', 'Ceremonial', 'Ataque']
   const partidos   = ['Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
   const etapas     = ['Internas', 'Nacionales', 'Ballottage']
   const territorios= ['Nacional', 'Montevideo', 'Interior']
-  const combos     = ['Promo Programática', 'Promo Imagen', 'Ataque Programático', 'Ataque Imagen']
+
+  const paginas = {
+    'Frente Amplio':    ['Frente Amplio', 'FA Campaña 2024', 'Orsi Presidente'],
+    'Partido Nacional': ['Partido Nacional', 'Álvarez Paz - PN', 'PN Campaña'],
+    'Partido Colorado': ['Partido Colorado', 'Sanguinetti Vuelve', 'Colorado 2024'],
+    'Otros':            ['Cabildo Abierto', 'Partido Independiente', 'Frente Amplio Regional'],
+  }
+
+  const textos = [
+    'Uruguay merece un gobierno que trabaje para todos. Sumate al cambio.',
+    'Defendemos la educación pública y la seguridad de los uruguayos.',
+    'El trabajo es el motor del progreso. Vota con convicción.',
+    'Nuestra propuesta para la salud y la vivienda está lista.',
+    'Juntos construimos un Uruguay mejor para las próximas generaciones.',
+    'La transparencia y la honestidad guían nuestro programa de gobierno.',
+    'Invertimos en infraestructura para conectar el Uruguay profundo.',
+    'Protegemos a los jubilados y pensionistas con políticas concretas.',
+    'La seguridad pública es nuestra prioridad número uno.',
+    'Compartí este mensaje. Uruguay necesita líderes comprometidos.',
+  ]
+
+  const alcances = ['Nacional', 'Montevideo', 'Interior', 'Canelones', 'Maldonado']
 
   let seed = 99
   const rand = () => {
@@ -99,17 +120,29 @@ function genTableData() {
     return seed / 0x7fffffff
   }
   const pick = (arr) => arr[Math.floor(rand() * arr.length)]
+  const pickN = (arr, n) => {
+    const shuffled = [...arr].sort(() => rand() - 0.5)
+    return shuffled.slice(0, n)
+  }
 
-  return Array.from({ length: 200 }, (_, i) => ({
-    id:          i + 1,
-    tipo:        pick(tipos),
-    partido:     pick(partidos),
-    etapa:       pick(etapas),
-    territorio:  pick(territorios),
-    gasto:       `$${(Math.floor(rand() * 40) + 5) * 100}–$${(Math.floor(rand() * 60) + 50) * 100}`,
-    impresiones: Math.floor(rand() * 90000) + 10000,
-    combinacion: pick(combos),
-  }))
+  return Array.from({ length: 200 }, (_, i) => {
+    const partido = pick(partidos)
+    const numTipos = Math.floor(rand() * 2) + 1
+    const tipos = pickN(todosLosTipos, numTipos)
+    return {
+      id:           i + 1,
+      nombre_pagina: pick(paginas[partido]),
+      partido,
+      texto:        pick(textos),
+      alcance:      pick(alcances),
+      tipos,
+      tipo:         tipos[0], // compatibilidad con filtros existentes
+      etapa:        pick(etapas),
+      territorio:   pick(territorios),
+      gasto:        `$${(Math.floor(rand() * 40) + 5) * 100}–$${(Math.floor(rand() * 60) + 50) * 100}`,
+      impresiones:  Math.floor(rand() * 90000) + 10000,
+    }
+  })
 }
 
 export const TABLE_DATA = genTableData()

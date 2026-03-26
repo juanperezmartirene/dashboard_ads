@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { BookOpenIcon } from 'lucide-react'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { Button, buttonVariants } from '@/components/ui/button'
 
 const PAGE_LINKS = [
   { id: 'home',        label: 'Inicio'      },
@@ -35,83 +38,104 @@ const PAGE_HEROES = {
   },
 }
 
-const NAV_BORDER = 'rgba(255,255,255,0.1)'
-
 export default function Header({ page, onNavigate }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [open, setOpen] = useState(false)
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
   const sections = page === 'home' ? HOME_SECTIONS : page === 'metodologia' ? METOD_SECTIONS : []
 
   return (
     <header style={{ backgroundColor: '#173363' }}>
-      {/* Top bar */}
-      <div style={{ borderBottom: `1px solid ${NAV_BORDER}` }}>
-        <div className="max-w-6xl mx-auto px-4 md:px-8 flex items-center justify-between h-12">
+      {/* ── Barra de navegación principal ── */}
+      <div
+        className="sticky top-0 z-50 w-full border-b"
+        style={{
+          backgroundColor: 'rgba(23,51,99,0.95)',
+          borderBottomColor: 'rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        }}
+      >
+        <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 md:px-8">
 
-          {/* Desktop: identity label */}
-          <span className="hidden sm:block text-xs font-medium tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            Uruguay · Meta · 2023–2024
-          </span>
+          {/* Logo */}
+          <button
+            onClick={() => onNavigate('home')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <BookOpenIcon className="size-5" style={{ color: '#0096D1' }} />
+            <span className="font-mono text-sm font-bold text-white tracking-tight">
+              Meta Política UY
+            </span>
+          </button>
 
-          {/* Desktop nav */}
-          <nav className="hidden sm:flex gap-1">
+          {/* Desktop: links */}
+          <div className="hidden items-center gap-1 lg:flex">
             {PAGE_LINKS.map(link => (
               <button
                 key={link.id}
                 onClick={() => onNavigate(link.id)}
-                style={page === link.id
-                  ? { backgroundColor: '#0096D1', color: '#fff' }
-                  : { color: 'rgba(255,255,255,0.65)' }
-                }
                 className="px-4 py-2 text-sm font-medium rounded transition-colors hover:bg-white/10"
+                style={
+                  page === link.id
+                    ? { backgroundColor: '#0096D1', color: '#fff' }
+                    : { color: 'rgba(255,255,255,0.70)' }
+                }
               >
                 {link.label}
               </button>
             ))}
-          </nav>
-
-          {/* Mobile: label + hamburger */}
-          <div className="flex sm:hidden items-center justify-between w-full">
-            <span className="text-xs font-medium tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Uruguay · Meta · 2024
-            </span>
-            <button
-              onClick={() => setMenuOpen(o => !o)}
-              className="p-2 -mr-2"
-              style={{ color: 'rgba(255,255,255,0.7)' }}
-              aria-label="Menú"
-            >
-              {menuOpen ? (
-                <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
-                </svg>
-              ) : (
-                <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
-                </svg>
-              )}
-            </button>
           </div>
-        </div>
 
-        {/* Mobile dropdown */}
-        {menuOpen && (
-          <div className="sm:hidden px-4 py-2" style={{ borderTop: `1px solid ${NAV_BORDER}`, backgroundColor: '#0f2347' }}>
+          {/* Mobile: hamburger */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="lg:hidden text-white hover:bg-white/10"
+            onClick={() => setOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
+            </svg>
+          </Button>
+        </nav>
+      </div>
+
+      {/* Mobile Sheet (drawer izquierdo) */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent
+          side="left"
+          showClose={false}
+          style={{
+            backgroundColor: 'rgba(23,51,99,0.97)',
+            backdropFilter: 'blur(12px)',
+            borderRight: '1px solid rgba(255,255,255,0.1)',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-8 px-1 pt-2">
+            <BookOpenIcon className="size-5" style={{ color: '#0096D1' }} />
+            <span className="font-mono text-sm font-bold text-white">Meta Política UY</span>
+          </div>
+          <div className="grid gap-y-1">
             {PAGE_LINKS.map(link => (
               <button
                 key={link.id}
-                onClick={() => { onNavigate(link.id); setMenuOpen(false) }}
-                style={page === link.id ? { backgroundColor: '#0096D1', color: '#fff' } : { color: 'rgba(255,255,255,0.7)' }}
-                className="block w-full text-left px-4 py-3 text-sm font-medium rounded transition-colors mb-1 hover:bg-white/10"
+                onClick={() => { onNavigate(link.id); setOpen(false) }}
+                className="flex items-center w-full px-4 py-3 text-sm font-medium rounded transition-colors text-left hover:bg-white/10"
+                style={
+                  page === link.id
+                    ? { backgroundColor: '#0096D1', color: '#fff' }
+                    : { color: 'rgba(255,255,255,0.75)' }
+                }
               >
                 {link.label}
               </button>
             ))}
           </div>
-        )}
-      </div>
+        </SheetContent>
+      </Sheet>
 
-      {/* Hero */}
+      {/* ── Hero ── */}
       <div className="max-w-6xl mx-auto px-4 md:px-8 pt-8 pb-4">
         <h1 className="font-semibold text-white leading-tight text-xl md:text-2xl" style={{ maxWidth: '36rem' }}>
           {hero.title}
@@ -121,15 +145,18 @@ export default function Header({ page, onNavigate }) {
         </p>
       </div>
 
-      {/* Section anchor nav — teal pills */}
+      {/* ── Anclas de sección ── */}
       {sections.length > 0 && (
-        <nav style={{ borderTop: `1px solid ${NAV_BORDER}` }} className="max-w-6xl mx-auto px-4 md:px-8">
+        <nav
+          className="max-w-6xl mx-auto px-4 md:px-8"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
+        >
           <ul className="flex gap-2 overflow-x-auto py-3" style={{ scrollbarWidth: 'none' }}>
             {sections.map(link => (
               <li key={link.href} className="shrink-0">
                 <a
                   href={link.href}
-                  className="block px-4 py-2 text-xs font-semibold text-white rounded-full transition-colors whitespace-nowrap"
+                  className="block px-4 py-2 text-xs font-semibold text-white rounded-full transition-opacity whitespace-nowrap"
                   style={{ backgroundColor: '#0096D1', opacity: 0.9 }}
                   onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                   onMouseLeave={e => e.currentTarget.style.opacity = '0.9'}
