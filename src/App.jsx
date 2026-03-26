@@ -7,7 +7,15 @@ import HeatmapChart from './components/HeatmapChart'
 import DepartmentChart from './components/DepartmentChart'
 import DataTable from './components/DataTable'
 import Footer from './components/Footer'
+import { GastoComparativoGlobal, GastoMetaVsTV } from './components/GastoComparativo'
+import InternasTable from './components/InternasTable'
+import NacionalesBar from './components/NacionalesBar'
+import TopCuentas from './components/TopCuentas'
 import { AD_TYPES, PARTIES, TIME_SERIES, DEPARTAMENTOS, TABLE_DATA, ETAPAS } from './data/mockData'
+import {
+  GASTO_META, GASTO_PARTIDO, GASTO_TOTAL_COMPARATIVO,
+  INTERNAS_CANDIDATOS, NACIONALES_PARTIDOS, TOP_CUENTAS,
+} from './data/gastoData'
 
 // ─── Layout primitives ────────────────────────────────────────────────────────
 
@@ -538,6 +546,185 @@ function PageEquipo() {
   )
 }
 
+// ─── GASTOS PAGE ──────────────────────────────────────────────────────────────
+
+const HALLAZGOS = [
+  {
+    icono: '📊',
+    titulo: 'Uso intensivo y concentrado',
+    texto: 'FA, PN y PC acumulan más del 85 % de los anuncios, impresiones y gasto. Dentro de cada partido existen también disparidades significativas entre candidaturas.',
+  },
+  {
+    icono: '💰',
+    titulo: 'Meta: el 31 % del gasto en TV',
+    texto: 'El gasto total en Meta (U$S 1.293.638) representa el 31 % de lo gastado en televisión abierta y solo el 3 % del total declarado por los partidos.',
+  },
+  {
+    icono: '📍',
+    titulo: 'Maldonado supera a Canelones',
+    texto: 'En el interior, Maldonado concentra más anuncios que Canelones en ambas etapas. Esto refleja la competencia interna del PN y los recursos disponibles en ese departamento.',
+  },
+  {
+    icono: '👥',
+    titulo: 'Foco en jóvenes de 25–34 años',
+    texto: 'El tramo de 25 a 34 años concentra el 26–28 % de todas las impresiones. Las mujeres de ese tramo reciben una proporción levemente mayor de publicidad.',
+  },
+]
+
+function GastoHallazgos() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+      {HALLAZGOS.map((h, i) => (
+        <div key={i} className="bg-white border border-gray-200 rounded-sm p-5">
+          <p className="text-lg mb-2">{h.icono}</p>
+          <p className="text-sm font-semibold text-gray-800 mb-1">{h.titulo}</p>
+          <p className="text-xs text-gray-500 leading-relaxed">{h.texto}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function GastoKPIs() {
+  const kpis = [
+    { label: 'Anuncios analizados',   value: '12.976',       sub: 'Internas + primera vuelta nacional' },
+    { label: 'Gasto total en Meta',   value: 'U$S 1.293.638', sub: 'FA + PN + PC · oct. 2023 – oct. 2024' },
+    { label: 'Cuentas anunciantes',   value: '514 / 442',    sub: 'Internas / Nacionales' },
+    { label: 'Total impresiones',     value: '979 M',         sub: 'Promedio estimado (internas + nacionales)' },
+  ]
+  const accents = ['#173363', '#0096D1', '#10B981', '#6366F1']
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+      {kpis.map((k, i) => (
+        <div
+          key={k.label}
+          className="bg-white border border-gray-200 rounded-sm px-4 py-4 md:px-6 md:py-5"
+          style={{ borderTop: `3px solid ${accents[i]}` }}
+        >
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-2 leading-snug">{k.label}</p>
+          <p className="font-mono font-bold text-gray-900 leading-none mb-2 truncate" style={{ fontSize: '1.35rem' }}>{k.value}</p>
+          <p className="text-xs text-gray-400 leading-snug">{k.sub}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function PageGastos() {
+  return (
+    <>
+      {/* ── Sección 1: Contexto del gasto ── */}
+      <Section id="gasto-contexto" gray>
+        <SectionMeta num={1} label="El gasto en contexto" />
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900">
+            ¿Cuánto y cómo gastan los partidos en Meta?
+          </h2>
+          <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
+            Bogliaccini, Fynn, Piñeiro-Rodríguez & Rosenblatt (2025) · 12.976 anuncios
+          </p>
+        </div>
+
+        <GastoHallazgos />
+        <GastoKPIs />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ChartBox
+            title="Comparativo de gasto: Meta en perspectiva"
+            sub="Gasto total en Meta (internas + nacionales) versus otras categorías de gasto declarado."
+          >
+            <GastoComparativoGlobal data={GASTO_TOTAL_COMPARATIVO} />
+          </ChartBox>
+
+          <ChartBox
+            title="Gasto en Meta vs. gasto en televisión por partido"
+            sub='El porcentaje indica qué fracción del gasto en TV representa el gasto total en Meta. Elecciones nacionales (primera vuelta).'
+          >
+            <GastoMetaVsTV data={GASTO_PARTIDO} />
+          </ChartBox>
+        </div>
+      </Section>
+
+      {/* ── Sección 2: Elecciones internas ── */}
+      <Section id="gasto-internas">
+        <SectionMeta num={2} label="Elecciones internas" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              La interna más desigual: el PN
+            </h2>
+            <Prose narrow>
+              Durante las elecciones internas (oct. 2023 – jun. 2024) se publicaron
+              6.955 anuncios. El PN concentró casi la mitad (49,9 %), seguido del FA
+              (24,9 %) y el PC (17,1 %). Álvaro Delgado casi duplicó en anuncios a
+              Laura Raffo y triplicó su gasto, reflejando la disparidad interna del PN.
+            </Prose>
+          </div>
+          <div>
+            <Prose>
+              En contraste, dentro del FA las proporciones de gasto de Orsi y Cosse
+              fueron similares (46,4 % vs 48,9 %). El PC presentó una interna más
+              fragmentada con cuatro candidatos relevantes. El total de impresiones
+              superó los 515 millones de visualizaciones promedio.
+            </Prose>
+          </div>
+        </div>
+
+        <ChartBox
+          title="Anuncios, impresiones y gasto por precandidato — elecciones internas 2024"
+          sub="Hacé clic en el encabezado de cada columna para ordenar. Las barras muestran el valor relativo dentro del corpus."
+          gray
+        >
+          <InternasTable data={INTERNAS_CANDIDATOS} />
+        </ChartBox>
+      </Section>
+
+      {/* ── Sección 3: Elecciones nacionales ── */}
+      <Section id="gasto-nacionales" gray>
+        <SectionMeta num={3} label="Elecciones nacionales" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              El FA logra más alcance con menos gasto
+            </h2>
+            <Prose narrow>
+              En la primera vuelta (jul.–oct. 2024) el PN lideró en volumen de
+              anuncios (2.461) y gasto (U$S 285.107). Sin embargo, el FA obtuvo más
+              impresiones (184,6 M) que el PN (143,9 M), a pesar de gastar menos,
+              con una eficiencia de 710 impresiones por dólar frente a 505 del PN.
+            </Prose>
+          </div>
+          <div>
+            <Prose>
+              Esta diferencia sugiere estrategias publicitarias distintas: el FA apostó
+              a anuncios de mayor duración o mejor segmentación, mientras que el PN
+              concentró su pauta en el período más intenso de campaña. El PC, pese a
+              tener menos anuncios que el FA, logró impresiones comparables en las
+              internas por mantener anuncios activos por más tiempo.
+            </Prose>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ChartBox
+            title="Resultados por partido — elecciones nacionales"
+            sub="Seleccioná la métrica para comparar partidos. Primera vuelta, jul.–oct. 2024."
+          >
+            <NacionalesBar data={NACIONALES_PARTIDOS} />
+          </ChartBox>
+
+          <ChartBox
+            title="Top 5 cuentas por anuncios, gasto e impresiones"
+            sub="Elecciones nacionales (primera vuelta). Las impresiones son promedios de rangos reportados por Meta."
+          >
+            <TopCuentas data={TOP_CUENTAS} />
+          </ChartBox>
+        </div>
+      </Section>
+    </>
+  )
+}
+
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -576,6 +763,7 @@ export default function App() {
       )}
       {page === 'metodologia' && <PageMetodologia />}
       {page === 'equipo'      && <PageEquipo />}
+      {page === 'gastos'      && <PageGastos />}
 
       <Footer page={page} onNavigate={navigate} />
     </div>

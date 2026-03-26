@@ -5,6 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 
 const PAGE_LINKS = [
   { id: 'home',        label: 'Inicio'      },
+  { id: 'gastos',      label: 'Gastos'      },
   { id: 'metodologia', label: 'Metodología' },
   { id: 'equipo',      label: 'Equipo'      },
 ]
@@ -17,6 +18,12 @@ const HOME_SECTIONS = [
   { href: '#datos',      label: 'Datos'       },
 ]
 
+const GASTOS_SECTIONS = [
+  { href: '#gasto-contexto',   label: 'Contexto'  },
+  { href: '#gasto-internas',   label: 'Internas'  },
+  { href: '#gasto-nacionales', label: 'Nacionales' },
+]
+
 const METOD_SECTIONS = [
   { href: '#estudio',   label: 'El estudio' },
   { href: '#tipologia', label: 'Tipología'  },
@@ -27,6 +34,10 @@ const PAGE_HEROES = {
   home: {
     title: 'Publicidad política digital en Meta durante las elecciones uruguayas 2024',
     sub: 'Análisis de 12.096 anuncios publicados por los principales partidos políticos en Facebook e Instagram a lo largo de tres etapas electorales.',
+  },
+  gastos: {
+    title: 'Gasto y estrategias de publicidad en Meta · Uruguay 2024',
+    sub: 'Análisis de 12.976 anuncios de las elecciones internas y la primera vuelta nacional. Gasto, impresiones y segmentación por partido y candidato.',
   },
   metodologia: {
     title: 'Metodología',
@@ -41,7 +52,10 @@ const PAGE_HEROES = {
 export default function Header({ page, onNavigate }) {
   const [open, setOpen] = useState(false)
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
-  const sections = page === 'home' ? HOME_SECTIONS : page === 'metodologia' ? METOD_SECTIONS : []
+  const sections = page === 'home' ? HOME_SECTIONS
+    : page === 'gastos'      ? GASTOS_SECTIONS
+    : page === 'metodologia' ? METOD_SECTIONS
+    : []
 
   return (
     <header style={{ backgroundColor: '#173363' }}>
