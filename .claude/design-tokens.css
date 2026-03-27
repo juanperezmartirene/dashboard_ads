@@ -1,0 +1,69 @@
+/* Design Tokens — Dashboard Publicidad Política Meta Uruguay
+   Usar como base para tailwind.config.js o importar directamente */
+
+:root {
+  /* Paleta */
+  --color-primary:      #1F2937;  /* Gris oscuro — fondos oscuros, títulos */
+  --color-secondary:    #374151;  /* Gris medio — elementos secundarios */
+  --color-accent:       #3B82F6;  /* Azul — acentos, CTA */
+  --color-accent-alt:   #10B981;  /* Verde mint — Tema */
+  --color-danger:       #EF4444;  /* Rojo — Ataque */
+  --color-indigo:       #6366F1;  /* Índigo — Promoción */
+  --color-amber:        #F59E0B;  /* Ámbar — Imagen */
+  --color-violet:       #8B5CF6;  /* Violeta — Ceremonial */
+  --color-bg:           #F9FAFB;  /* Fondo principal */
+  --color-bg-card:      #FFFFFF;  /* Fondo tarjetas */
+  --color-border:       #E5E7EB;  /* Bordes sutiles */
+  --color-text:         #111827;  /* Texto principal */
+  --color-text-light:   #6B7280;  /* Texto secundario */
+
+  /* Colores por tipo de anuncio (consistente en todos los gráficos) */
+  --tipo-promocion:  #6366F1;
+  --tipo-cta:        #3B82F6;
+  --tipo-tema:       #10B981;
+  --tipo-imagen:     #F59E0B;
+  --tipo-ceremonial: #8B5CF6;
+  --tipo-ataque:     #EF4444;
+
+  /* Espaciado (base 8px) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+
+  /* Tipografía */
+  --font-sans: Inter, "Segoe UI", -apple-system, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+
+  --text-xs:   11px;
+  --text-sm:   13px;   /* datos en tabla */
+  --text-base: 14px;   /* body */
+  --text-lg:   20px;   /* subtítulos */
+  --text-xl:   32px;   /* título principal */
+  --text-kpi:  28px;   /* números KPI — usar font-mono */
+
+  /* Sombras */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+
+  /* Bordes */
+  --radius: 6px;
+}
+
+/* Tailwind config equivalente:
+   colors: {
+     primary: '#1F2937', secondary: '#374151', accent: '#3B82F6',
+     danger: '#EF4444', bg: '#F9FAFB', card: '#FFFFFF',
+     border: '#E5E7EB', text: '#111827', muted: '#6B7280',
+     tipos: {
+       promocion: '#6366F1', cta: '#3B82F6', tema: '#10B981',
+       imagen: '#F59E0B', ceremonial: '#8B5CF6', ataque: '#EF4444'
+     }
+   }
+*/
+
+/* Print — no imprimir filtros ni sidebar */
+@media print {
+  .filters-panel, .sidebar { display: none !important; }
+  .chart-container { page-break-inside: avoid; }
+}

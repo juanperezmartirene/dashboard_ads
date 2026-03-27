@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx puppeteer@21 screenshot --url \"file:///d:/Proyecto%20Facebook/Pagina/index.html\" --full-page --output screenshot.png)"
+    ]
+  }
+}

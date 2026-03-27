@@ -1,0 +1,102 @@
+{
+  "_comment": "Estructura de datos para el dashboard. Colocar en /src/data/dashboard-data.json",
+
+  "metadata": {
+    "total_anuncios": 12096,
+    "periodo": "2023-10-01 a 2024-11-30",
+    "modelo_clasificacion": "ROUBERTa",
+    "f1_score": 0.78,
+    "ultima_actualizacion": "2026-03-24"
+  },
+
+  "kpis": {
+    "total_anuncios": 12096,
+    "tipo_dominante": "Promoción (86.2%)",
+    "partidos": 4,
+    "etapas": 3
+  },
+
+  "distribucion_tipos": [
+    { "tipo": "Promoción",          "cantidad": 10438, "pct": 86.2, "f1": 0.86, "color": "#6366F1" },
+    { "tipo": "CTA",                "cantidad": 7536,  "pct": 62.3, "f1": 0.68, "color": "#3B82F6" },
+    { "tipo": "Tema",               "cantidad": 5782,  "pct": 47.8, "f1": 0.76, "color": "#10B981" },
+    { "tipo": "Imagen",             "cantidad": 3226,  "pct": 26.7, "f1": 0.65, "color": "#F59E0B" },
+    { "tipo": "Ceremonial",         "cantidad": 2131,  "pct": 17.6, "f1": 0.75, "color": "#8B5CF6" },
+    { "tipo": "Ataque",             "cantidad": 1398,  "pct": 11.6, "f1": 0.51, "color": "#EF4444" }
+  ],
+
+  "por_partido": [
+    { "nombre": "Partido Nacional", "cantidad": 4200, "pct": 35, "promocion": 0.35, "ataque": 0.03, "tema": 0.13, "imagen": 0.09, "cta": 0.23, "ceremonial": 0.04 },
+    { "nombre": "Partido Colorado", "cantidad": 3400, "pct": 28, "promocion": 0.36, "ataque": 0.04, "tema": 0.17, "imagen": 0.12, "cta": 0.24, "ceremonial": 0.06 },
+    { "nombre": "Frente Amplio",    "cantidad": 3150, "pct": 26, "promocion": 0.33, "ataque": 0.06, "tema": 0.19, "imagen": 0.07, "cta": 0.25, "ceremonial": 0.05 },
+    { "nombre": "Otros",            "cantidad": 1346, "pct": 11, "promocion": 0.34, "ataque": 0.05, "tema": 0.23, "imagen": 0.06, "cta": 0.29, "ceremonial": 0.03 }
+  ],
+
+  "etapas_electorales": [
+    {
+      "nombre": "Internas",
+      "fecha_inicio": "2024-01-01",
+      "fecha_fin": "2024-06-30",
+      "fecha_eleccion": "2024-06-30",
+      "anuncios_total": 6192,
+      "distribucion": { "promocion": 0.35, "ataque": 0.05, "tema": 0.19, "imagen": 0.08, "cta": 0.23, "ceremonial": 0.05 }
+    },
+    {
+      "nombre": "Nacionales",
+      "fecha_inicio": "2024-07-01",
+      "fecha_fin": "2024-10-31",
+      "fecha_eleccion": "2024-10-27",
+      "anuncios_total": 5547,
+      "distribucion": { "promocion": 0.34, "ataque": 0.04, "tema": 0.18, "imagen": 0.10, "cta": 0.27, "ceremonial": 0.06 }
+    },
+    {
+      "nombre": "Ballottage",
+      "fecha_inicio": "2024-11-01",
+      "fecha_fin": "2024-11-30",
+      "fecha_eleccion": "2024-11-24",
+      "anuncios_total": 357,
+      "distribucion": { "promocion": 0.36, "ataque": 0.07, "tema": 0.23, "imagen": 0.11, "cta": 0.16, "ceremonial": 0.11 }
+    }
+  ],
+
+  "series_temporales": [
+    {
+      "_comment": "Una fila por fecha. Reemplazar con datos reales del modelo.",
+      "fecha": "2023-10-01",
+      "Promoción": 12, "Ataque": 2, "Imagen": 5, "Tema": 8, "CTA": 10, "Ceremonial": 3
+    },
+    {
+      "fecha": "2023-10-02",
+      "Promoción": 15, "Ataque": 1, "Imagen": 6, "Tema": 9, "CTA": 11, "Ceremonial": 2
+    }
+  ],
+
+  "distribucion_geografica": [
+    { "departamento": "Montevideo",  "impresiones_promedio": 542000, "porcentaje_total": 45, "promocion": 0.42, "ataque": 0.08, "tema": 0.23, "imagen": 0.09, "cta": 0.27, "ceremonial": 0.04 },
+    { "departamento": "Canelones",   "impresiones_promedio": 187000, "porcentaje_total": 16, "promocion": 0.38, "ataque": 0.05, "tema": 0.20, "imagen": 0.08, "cta": 0.25, "ceremonial": 0.05 },
+    { "departamento": "Maldonado",   "impresiones_promedio": 95000,  "porcentaje_total": 8,  "promocion": 0.35, "ataque": 0.04, "tema": 0.19, "imagen": 0.07, "cta": 0.26, "ceremonial": 0.09 },
+    { "departamento": "Rivera",      "impresiones_promedio": 42000,  "porcentaje_total": 3,  "promocion": 0.34, "ataque": 0.03, "tema": 0.21, "imagen": 0.08, "cta": 0.28, "ceremonial": 0.06 },
+    { "departamento": "Salto",       "impresiones_promedio": 38000,  "porcentaje_total": 3,  "promocion": 0.33, "ataque": 0.04, "tema": 0.22, "imagen": 0.07, "cta": 0.27, "ceremonial": 0.07 },
+    { "departamento": "Paysandú",    "impresiones_promedio": 35000,  "porcentaje_total": 3,  "promocion": 0.36, "ataque": 0.03, "tema": 0.18, "imagen": 0.09, "cta": 0.26, "ceremonial": 0.08 },
+    { "departamento": "Colonia",     "impresiones_promedio": 48000,  "porcentaje_total": 4,  "promocion": 0.37, "ataque": 0.04, "tema": 0.17, "imagen": 0.10, "cta": 0.25, "ceremonial": 0.07 },
+    { "departamento": "San José",    "impresiones_promedio": 31000,  "porcentaje_total": 3,  "promocion": 0.35, "ataque": 0.04, "tema": 0.20, "imagen": 0.08, "cta": 0.26, "ceremonial": 0.07 },
+    { "departamento": "Rocha",       "impresiones_promedio": 22000,  "porcentaje_total": 2,  "promocion": 0.34, "ataque": 0.03, "tema": 0.21, "imagen": 0.08, "cta": 0.27, "ceremonial": 0.07 },
+    { "departamento": "Soriano",     "impresiones_promedio": 20000,  "porcentaje_total": 2,  "promocion": 0.35, "ataque": 0.04, "tema": 0.19, "imagen": 0.09, "cta": 0.26, "ceremonial": 0.07 },
+    { "departamento": "Durazno",     "impresiones_promedio": 15000,  "porcentaje_total": 1,  "promocion": 0.34, "ataque": 0.03, "tema": 0.22, "imagen": 0.08, "cta": 0.27, "ceremonial": 0.06 },
+    { "departamento": "Florida",     "impresiones_promedio": 14000,  "porcentaje_total": 1,  "promocion": 0.35, "ataque": 0.03, "tema": 0.21, "imagen": 0.08, "cta": 0.26, "ceremonial": 0.07 },
+    { "departamento": "Flores",      "impresiones_promedio": 9000,   "porcentaje_total": 1,  "promocion": 0.34, "ataque": 0.03, "tema": 0.22, "imagen": 0.08, "cta": 0.27, "ceremonial": 0.06 },
+    { "departamento": "Tacuarembó",  "impresiones_promedio": 18000,  "porcentaje_total": 2,  "promocion": 0.33, "ataque": 0.04, "tema": 0.22, "imagen": 0.08, "cta": 0.27, "ceremonial": 0.06 },
+    { "departamento": "Cerro Largo", "impresiones_promedio": 16000,  "porcentaje_total": 1,  "promocion": 0.34, "ataque": 0.03, "tema": 0.21, "imagen": 0.09, "cta": 0.27, "ceremonial": 0.06 },
+    { "departamento": "Treinta y Tres","impresiones_promedio": 11000,"porcentaje_total": 1,  "promocion": 0.34, "ataque": 0.03, "tema": 0.22, "imagen": 0.08, "cta": 0.27, "ceremonial": 0.06 },
+    { "departamento": "Lavalleja",   "impresiones_promedio": 13000,  "porcentaje_total": 1,  "promocion": 0.35, "ataque": 0.03, "tema": 0.20, "imagen": 0.09, "cta": 0.26, "ceremonial": 0.07 },
+    { "departamento": "Artigas",     "impresiones_promedio": 12000,  "porcentaje_total": 1,  "promocion": 0.33, "ataque": 0.04, "tema": 0.23, "imagen": 0.08, "cta": 0.26, "ceremonial": 0.06 },
+    { "departamento": "Rio Negro",   "impresiones_promedio": 14000,  "porcentaje_total": 1,  "promocion": 0.35, "ataque": 0.03, "tema": 0.20, "imagen": 0.09, "cta": 0.26, "ceremonial": 0.07 }
+  ],
+
+  "combinaciones_contenido": [
+    { "combinacion": "Promo Programática", "frecuencia": 6000, "pct": 57.4 },
+    { "combinacion": "Promo Imagen",       "frecuencia": 3500, "pct": 33.5 },
+    { "combinacion": "Ataque Programático","frecuencia": 1100, "pct": 10.5 },
+    { "combinacion": "Ataque Imagen",      "frecuencia": 50,   "pct": 0.5  }
+  ]
+}
