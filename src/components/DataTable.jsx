@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import { ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TYPE_COLORS = {
@@ -26,9 +27,9 @@ const COLS = [
   { key: 'part_org',              label: 'Partido',          sortable: true  },
   { key: 'text_body',             label: 'Texto',            sortable: false },
   { key: 'departamento_nacional', label: 'Alcance',          sortable: true  },
-  { key: 'tipos',                 label: 'Tipos',            sortable: false },
   { key: '_gasto',                label: 'Gasto Est.',       sortable: false },
   { key: '_impresiones',          label: 'Impresiones',      sortable: true  },
+  { key: '_link',                 label: 'Ver',              sortable: false },
 ]
 
 const PAGE_SIZE = 20
@@ -46,7 +47,7 @@ export default function DataTable({ data }) {
       const q = search.toLowerCase()
       rows = rows.filter(r =>
         (r.page_name  || '').toLowerCase().includes(q) ||
-        (r.text_body  || '').toLowerCase().includes(q) ||
+        (r.text_body  || r.texto_anuncio_completo || '').toLowerCase().includes(q) ||
         (r.part_org   || '').toLowerCase().includes(q)
       )
     }
@@ -164,41 +165,15 @@ export default function DataTable({ data }) {
                 <TableCell className="text-sm text-gray-500 max-w-[220px]">
                   <span
                     className="block truncate"
-                    title={row.text_body}
+                    title={row.text_body || row.texto_anuncio_completo}
                   >
-                    {row.text_body || '—'}
+                    {row.text_body || row.texto_anuncio_completo || '—'}
                   </span>
                 </TableCell>
 
                 {/* Alcance */}
                 <TableCell className="text-sm text-gray-600 whitespace-nowrap">
                   {row.departamento_nacional || '—'}
-                </TableCell>
-
-                {/* Tipos — badges derivados de columnas binarias */}
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {[
-                      row.advocacy       === 1 && 'Promoción',
-                      row.attack         === 1 && 'Ataque',
-                      row.call_to_action === 1 && 'CTA',
-                      row.issue          === 1 && 'Tema',
-                      row.image          === 1 && 'Imagen',
-                      row.ceremonial     === 1 && 'Ceremonial',
-                    ].filter(Boolean).map(t => {
-                      const c = TYPE_COLORS[t]
-                      return (
-                        <Badge
-                          key={t}
-                          variant="outline"
-                          className="text-xs font-medium"
-                          style={c ? { backgroundColor: c.bg, color: c.color, borderColor: c.color + '40' } : {}}
-                        >
-                          {t}
-                        </Badge>
-                      )
-                    })}
-                  </div>
                 </TableCell>
 
                 {/* Gasto */}
@@ -211,6 +186,23 @@ export default function DataTable({ data }) {
                   {typeof row._impresiones === 'number'
                     ? row._impresiones.toLocaleString('es-UY')
                     : row._impresiones || '—'}
+                </TableCell>
+
+                {/* Link a Biblioteca de Transparencia de Meta */}
+                <TableCell className="text-center">
+                  {row.id ? (
+                    <a
+                      href={`https://www.facebook.com/ads/library/?id=${row.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors hover:bg-blue-50"
+                      style={{ color: '#0096D1' }}
+                      title="Ver en Biblioteca de Anuncios de Meta"
+                    >
+                      <ExternalLink className="size-3.5" />
+                      <span className="hidden sm:inline">Meta</span>
+                    </a>
+                  ) : '—'}
                 </TableCell>
 
               </TableRow>
