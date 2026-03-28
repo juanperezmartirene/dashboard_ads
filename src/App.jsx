@@ -1,27 +1,19 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
-import HorizontalBarChart from './components/HorizontalBarChart'
-import StackedAreaChart from './components/StackedAreaChart'
-import HeatmapChart from './components/HeatmapChart'
 import DepartmentChart from './components/DepartmentChart'
 import DataTable from './components/DataTable'
 import Footer from './components/Footer'
-import { GastoComparativoGlobal, GastoMetaVsTV } from './components/GastoComparativo'
 import InternasTable from './components/InternasTable'
 import NacionalesBar from './components/NacionalesBar'
 import TopCuentas from './components/TopCuentas'
-import { TIME_SERIES, TABLE_DATA, ETAPAS } from './data/mockData'
-import { computeAdTypes, computeHeatmap, computeDepartamentosForChart } from './data/computeStats'
-
-// ─── Module-level computed stats (update automatically when TABLE_DATA changes) ─
-const AD_TYPES      = computeAdTypes(TABLE_DATA)
-const PARTIES       = computeHeatmap(TABLE_DATA)
-const DEPARTAMENTOS = computeDepartamentosForChart(TABLE_DATA)
 import {
-  GASTO_META, GASTO_PARTIDO, GASTO_TOTAL_COMPARATIVO,
-  INTERNAS_CANDIDATOS, NACIONALES_PARTIDOS, TOP_CUENTAS,
-} from './data/gastoData'
+  processData,
+  computeGastoMeta, computeGastoPartido,
+  computeInternasCandidatos, computeNacionalesPartidos,
+  computeTopCuentas, computeDeptDistribution, computeKPIs,
+  computeFilteredStats,
+} from './data/processRealData'
 
 // ─── Layout primitives ────────────────────────────────────────────────────────
 
@@ -68,7 +60,90 @@ function ChartBox({ title, sub, children, gray }) {
 
 // ─── HOME PAGE ────────────────────────────────────────────────────────────────
 
-function HomeResultados() {
+function HomeKPIs({ stats }) {
+  const accents = ['#173363', '#0096D1', '#10B981', '#6366F1', '#D97706']
+  const items = [
+    { label: 'Anuncios', value: stats.totalAnuncios.toLocaleString('es-UY') },
+    { label: 'Gasto estimado', value: `U$S ${stats.totalGasto.toLocaleString('es-UY')}` },
+    { label: 'Impresiones est.', value: stats.totalImp > 1e6 ? `${(stats.totalImp / 1e6).toFixed(1)} M` : stats.totalImp.toLocaleString('es-UY') },
+    { label: 'Cuentas', value: stats.cuentas.toLocaleString('es-UY') },
+    { label: 'Imp. por dólar', value: stats.impDolar.toLocaleString('es-UY') },
+  ]
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+      {items.map((k, i) => (
+        <div
+          key={k.label}
+          className="bg-white border border-gray-200 rounded-sm px-4 py-3"
+          style={{ borderTop: `3px solid ${accents[i]}` }}
+        >
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1 leading-snug">{k.label}</p>
+          <p className="font-mono font-bold text-gray-900 leading-none truncate" style={{ fontSize: '1.1rem' }}>{k.value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HomePartyTable({ stats }) {
+  const maxAds = Math.max(...stats.byParty.map(p => p.anuncios), 1)
+  return (
+    <div className="space-y-2.5">
+      {stats.byParty.map(p => (
+        <div key={p.partido}>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-500 w-28 shrink-0 truncate">{p.partido}</span>
+            <div className="flex-1 bg-gray-100 rounded-sm h-6 relative overflow-hidden">
+              <div
+                className="h-full rounded-sm"
+                style={{ width: `${(p.anuncios / maxAds) * 100}%`, backgroundColor: p.color, opacity: 0.8 }}
+              />
+            </div>
+            <span className="text-xs font-mono text-gray-600 w-16 text-right">{p.anuncios.toLocaleString('es-UY')}</span>
+          </div>
+          <div className="flex gap-4 ml-[7.5rem] mt-0.5">
+            <span className="text-xs text-gray-400">U$S {p.gasto.toLocaleString('es-UY')}</span>
+            <span className="text-xs text-gray-400">{p.impresiones > 1e6 ? (p.impresiones / 1e6).toFixed(1) + ' M imp.' : p.impresiones.toLocaleString('es-UY') + ' imp.'}</span>
+            <span className="text-xs text-gray-400">{p.imp_dolar.toLocaleString('es-UY')} imp/U$S</span>
+            <span className="text-xs text-gray-400">{p.cuentas} cuentas</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HomeTop5({ top5 }) {
+  const cols = [
+    { key: 'anuncios', label: 'Por anuncios', fmt: v => v.toLocaleString('es-UY') },
+    { key: 'gasto', label: 'Por gasto', fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
+    { key: 'impresiones', label: 'Por impresiones', fmt: v => v > 1e6 ? (v / 1e6).toFixed(1) + ' M' : v.toLocaleString('es-UY') },
+  ]
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {cols.map(col => (
+        <div key={col.key}>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">{col.label}</p>
+          <div className="space-y-1.5">
+            {top5.map((row, i) => {
+              const item = row[col.key]
+              if (!item) return null
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-gray-300 w-4 shrink-0">{i + 1}</span>
+                  <span className="text-xs text-gray-700 flex-1 truncate">{item.nombre}</span>
+                  <span className="text-xs font-mono text-gray-500 shrink-0">{col.fmt(item.valor)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HomeResumen({ deptData, filteredStats, hasFilters }) {
   return (
     <Section id="resultados" gray>
       <SectionMeta num={1} label="Resultados" />
@@ -77,136 +152,104 @@ function HomeResultados() {
           Los datos, de un vistazo
         </h2>
         <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
-          Corpus completo · Oct 2023 – Nov 2024 · Clasificación automática ROUBERTa (F1: 0,78)
+          {hasFilters ? 'Filtros activos · ' : ''}Datos de Meta Ad Library · Oct 2023 – Nov 2024
         </p>
       </div>
 
-      <ChartBox
-        title="Distribución por tipo de anuncio"
-        sub="Cantidad de anuncios clasificados en cada tipo. Un anuncio puede figurar en más de una categoría — los porcentajes no suman 100 %."
-      >
-        <HorizontalBarChart data={AD_TYPES} />
-      </ChartBox>
-    </Section>
-  )
-}
+      <HomeKPIs stats={filteredStats} />
 
-function HomeTemporal() {
-  return (
-    <Section id="temporal">
-      <SectionMeta num={2} label="Evolución temporal" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            La campaña en el tiempo
-          </h2>
-          <Prose narrow>
-            La actividad publicitaria sigue un patrón de aceleración típico de
-            las campañas electorales: volumen moderado en la fase inicial,
-            crecimiento progresivo hacia las internas de junio, y un pico de
-            intensidad pronunciado en las semanas previas a las nacionales de
-            octubre.
-          </Prose>
-        </div>
-        <div>
-          <Prose>
-            La categoría <strong className="text-gray-800">Promoción</strong>{' '}
-            domina en todas las etapas y refleja el carácter preferentemente
-            positivo de la comunicación política uruguaya. El{' '}
-            <strong className="text-gray-800">Ataque</strong>, aunque
-            minoritario, muestra un leve repunte hacia el ballottage. La
-            categoría <strong className="text-gray-800">CTA</strong> crece
-            marcadamente en los tramos finales de cada etapa.
-          </Prose>
-        </div>
-      </div>
-
-      <ChartBox
-        title="Volumen semanal de anuncios por tipo"
-        sub="Las líneas verticales punteadas marcan las fechas de cada elección. Hacer clic en la leyenda muestra/oculta cada categoría."
-      >
-        <StackedAreaChart data={TIME_SERIES} etapas={ETAPAS} />
-      </ChartBox>
-    </Section>
-  )
-}
-
-function HomePartidosTerritorial() {
-  return (
-    <Section id="partidos" gray>
-      <SectionMeta num={3} label="Partido y territorio" />
-      <h2 className="text-2xl font-semibold text-gray-900 mb-8">
-        Distintos énfasis, distintas geografías
-      </h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <ChartBox
-          title="Distribución por tipo según partido — % de anuncios"
-          sub="Cada celda muestra la proporción de anuncios de ese tipo en el corpus de ese partido. Clasificación multi-etiqueta."
-          gray
+          title="Anuncios por partido"
+          sub="Total de anuncios, gasto, impresiones e impresiones por dólar por partido."
         >
-          <HeatmapChart parties={PARTIES} />
+          <HomePartyTable stats={filteredStats} />
         </ChartBox>
 
         <ChartBox
           id="territorial"
-          title="Impresiones estimadas por departamento"
-          sub="Ordenado de mayor a menor. Hover para ver valores exactos."
+          title="Impresiones por departamento"
+          sub="Impresiones estimadas por departamento. Solo anuncios con alcance departamental."
         >
-          <DepartmentChart data={DEPARTAMENTOS} />
+          <DepartmentChart data={deptData} />
         </ChartBox>
       </div>
+
+      <ChartBox
+        title="Top 5 cuentas por anuncios, gasto e impresiones"
+        sub="Ranking de las principales cuentas anunciantes según los filtros activos."
+      >
+        <HomeTop5 top5={filteredStats.top5} />
+      </ChartBox>
     </Section>
   )
 }
 
-function HomeDatos({ filteredTable, selectedParties, setSelectedParties, selectedEtapa, setSelectedEtapa, selectedTerritorio, setSelectedTerritorio }) {
+function HomeDatos({ filteredTable, loadingData }) {
   return (
     <Section id="datos">
-      <SectionMeta num={4} label="Explorar los datos" />
+      <SectionMeta num={2} label="Registro de anuncios" />
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          Registro de anuncios
+          Explorar el corpus
         </h2>
         <Prose narrow>
-          Explorá el corpus por tipo, partido, etapa y territorio. Usá los
-          filtros para buscar combinaciones específicas.
+          Hacé clic en cualquier fila para ver la vista previa del anuncio. Los filtros de arriba también afectan esta tabla.
         </Prose>
       </div>
 
-      <FilterPanel
-        selectedParties={selectedParties}
-        setSelectedParties={setSelectedParties}
-        selectedEtapa={selectedEtapa}
-        setSelectedEtapa={setSelectedEtapa}
-        selectedTerritorio={selectedTerritorio}
-        setSelectedTerritorio={setSelectedTerritorio}
-      />
-
       <div className="bg-white border border-gray-200 rounded-sm p-5">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-gray-400">
-            {filteredTable.length.toLocaleString('es-UY')} registros con los filtros activos
-          </p>
-        </div>
-        <DataTable data={filteredTable} />
+        {loadingData ? (
+          <div className="flex items-center justify-center py-16 gap-3">
+            <div
+              className="w-5 h-5 rounded-full border-2 border-gray-200 animate-spin"
+              style={{ borderTopColor: '#0096D1' }}
+            />
+            <span className="text-sm text-gray-400">Cargando datos...</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs text-gray-400">
+                {filteredTable.length.toLocaleString('es-UY')} registros con los filtros activos
+              </p>
+            </div>
+            <DataTable data={filteredTable} />
+          </>
+        )}
       </div>
     </Section>
   )
 }
 
-function PageHome({ filteredTable, selectedParties, setSelectedParties, selectedEtapa, setSelectedEtapa, selectedTerritorio, setSelectedTerritorio }) {
+function PageHome({ filteredTable, loadingData, selectedParties, setSelectedParties, selectedEtapa, setSelectedEtapa, selectedTerritorio, setSelectedTerritorio, deptData, filteredStats }) {
+  const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas' || selectedTerritorio.length > 0
   return (
     <>
-      <HomeResultados />
-      <HomeTemporal />
-      <HomePartidosTerritorial />
-      <HomeDatos
-        filteredTable={filteredTable}
-        selectedParties={selectedParties}    setSelectedParties={setSelectedParties}
-        selectedEtapa={selectedEtapa}        setSelectedEtapa={setSelectedEtapa}
-        selectedTerritorio={selectedTerritorio} setSelectedTerritorio={setSelectedTerritorio}
-      />
+      {/* Filters at top, affecting everything below */}
+      <Section id="filtros">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-1">
+              Publicidad política en Meta · Uruguay 2024
+            </h2>
+            <Prose narrow>
+              Filtrá por partido, etapa electoral y territorio. Todos los indicadores se actualizan automáticamente.
+            </Prose>
+          </div>
+        </div>
+        <FilterPanel
+          selectedParties={selectedParties}
+          setSelectedParties={setSelectedParties}
+          selectedEtapa={selectedEtapa}
+          setSelectedEtapa={setSelectedEtapa}
+          selectedTerritorio={selectedTerritorio}
+          setSelectedTerritorio={setSelectedTerritorio}
+        />
+      </Section>
+
+      <HomeResumen deptData={deptData} filteredStats={filteredStats} hasFilters={hasFilters} />
+      <HomeDatos filteredTable={filteredTable} loadingData={loadingData} />
     </>
   )
 }
@@ -359,12 +402,16 @@ function MetodTipologia() {
         ))}
       </div>
 
-      <ChartBox
-        title="Frecuencia por categoría"
-        sub="Cantidad de anuncios clasificados en cada tipo. Un anuncio puede figurar en más de una categoría."
-      >
-        <HorizontalBarChart data={AD_TYPES} />
-      </ChartBox>
+      <div className="bg-white border border-gray-200 rounded-sm p-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-1">Frecuencia por categoría</h3>
+        <p className="text-xs text-gray-400 mb-5">
+          Cantidad de anuncios clasificados en cada tipo. Un anuncio puede figurar en más de una categoría.
+        </p>
+        <p className="text-xs text-gray-400 italic">
+          Pendiente: las clasificaciones automáticas con ROUBERTa aún no se han ejecutado sobre el corpus completo.
+          Los datos de esta sección provienen de resultados preliminares del modelo.
+        </p>
+      </div>
     </Section>
   )
 }
@@ -554,35 +601,39 @@ function PageEquipo() {
 
 // ─── GASTOS PAGE ──────────────────────────────────────────────────────────────
 
-const HALLAZGOS = [
-  {
-    icono: '📊',
-    titulo: 'Uso intensivo y concentrado',
-    texto: 'FA, PN y PC acumulan más del 85 % de los anuncios, impresiones y gasto. Dentro de cada partido existen también disparidades significativas entre candidaturas.',
-  },
-  {
-    icono: '💰',
-    titulo: 'Meta: el 31 % del gasto en TV',
-    texto: 'El gasto total en Meta (U$S 1.293.638) representa el 31 % de lo gastado en televisión abierta y solo el 3 % del total declarado por los partidos.',
-  },
-  {
-    icono: '📍',
-    titulo: 'Maldonado supera a Canelones',
-    texto: 'En el interior, Maldonado concentra más anuncios que Canelones en ambas etapas. Esto refleja la competencia interna del PN y los recursos disponibles en ese departamento.',
-  },
-  {
-    icono: '👥',
-    titulo: 'Foco en jóvenes de 25–34 años',
-    texto: 'El tramo de 25 a 34 años concentra el 26–28 % de todas las impresiones. Las mujeres de ese tramo reciben una proporción levemente mayor de publicidad.',
-  },
-]
+function GastoHallazgos({ gastoPartido }) {
+  const total = gastoPartido.reduce((s, p) => s + p.anuncios, 0)
+  const topPartido = gastoPartido[0] || {}
+  const topEficiencia = [...gastoPartido].sort((a, b) => {
+    const ea = a.gasto_total > 0 ? a.imp_total / a.gasto_total : 0
+    const eb = b.gasto_total > 0 ? b.imp_total / b.gasto_total : 0
+    return eb - ea
+  })[0] || {}
+  const eficiencia = topEficiencia.gasto_total > 0 ? Math.round(topEficiencia.imp_total / topEficiencia.gasto_total) : 0
 
-function GastoHallazgos() {
+  const hallazgos = [
+    {
+      titulo: 'Concentración partidaria',
+      texto: `Los tres principales partidos (PN, FA, PC) acumulan ${total.toLocaleString('es-UY')} anuncios. ${topPartido.partido || ''} lidera con ${topPartido.anuncios?.toLocaleString('es-UY') || 0} anuncios.`,
+    },
+    {
+      titulo: 'Gasto total estimado en Meta',
+      texto: `El gasto acumulado en Meta asciende a U$S ${gastoPartido.reduce((s, p) => s + p.gasto_total, 0).toLocaleString('es-UY')} (promedio de rangos reportados por la plataforma).`,
+    },
+    {
+      titulo: 'Eficiencia publicitaria',
+      texto: `${topEficiencia.partido || ''} obtiene la mayor eficiencia con ${eficiencia.toLocaleString('es-UY')} impresiones por dólar invertido.`,
+    },
+    {
+      titulo: 'Distribución internas/nacionales',
+      texto: `Internas: ${gastoPartido.reduce((s, p) => s + p.anuncios_internas, 0).toLocaleString('es-UY')} anuncios. Nacionales: ${gastoPartido.reduce((s, p) => s + p.anuncios_nacionales, 0).toLocaleString('es-UY')} anuncios.`,
+    },
+  ]
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-      {HALLAZGOS.map((h, i) => (
+      {hallazgos.map((h, i) => (
         <div key={i} className="bg-white border border-gray-200 rounded-sm p-5">
-          <p className="text-lg mb-2">{h.icono}</p>
           <p className="text-sm font-semibold text-gray-800 mb-1">{h.titulo}</p>
           <p className="text-xs text-gray-500 leading-relaxed">{h.texto}</p>
         </div>
@@ -591,13 +642,7 @@ function GastoHallazgos() {
   )
 }
 
-function GastoKPIs() {
-  const kpis = [
-    { label: 'Anuncios analizados',   value: '12.976',       sub: 'Internas + primera vuelta nacional' },
-    { label: 'Gasto total en Meta',   value: 'U$S 1.293.638', sub: 'FA + PN + PC · oct. 2023 – oct. 2024' },
-    { label: 'Cuentas anunciantes',   value: '514 / 442',    sub: 'Internas / Nacionales' },
-    { label: 'Total impresiones',     value: '979 M',         sub: 'Promedio estimado (internas + nacionales)' },
-  ]
+function GastoKPIs({ kpis }) {
   const accents = ['#173363', '#0096D1', '#10B981', '#6366F1']
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
@@ -616,7 +661,18 @@ function GastoKPIs() {
   )
 }
 
-function PageGastos() {
+function PageGastos({ kpis, gastoPartido, internasCandidatos, nacionalesPartidos, topCuentas, loadingData }) {
+  if (loadingData) {
+    return (
+      <Section>
+        <div className="flex items-center justify-center py-16 gap-3">
+          <div className="w-5 h-5 rounded-full border-2 border-gray-200 animate-spin" style={{ borderTopColor: '#0096D1' }} />
+          <span className="text-sm text-gray-400">Cargando datos...</span>
+        </div>
+      </Section>
+    )
+  }
+
   return (
     <>
       {/* ── Sección 1: Contexto del gasto ── */}
@@ -627,28 +683,52 @@ function PageGastos() {
             ¿Cuánto y cómo gastan los partidos en Meta?
           </h2>
           <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
-            Bogliaccini, Fynn, Piñeiro-Rodríguez & Rosenblatt (2025) · 12.976 anuncios
+            Datos computados del corpus · {kpis[0]?.value || ''} anuncios
           </p>
         </div>
 
-        <GastoHallazgos />
-        <GastoKPIs />
+        <GastoHallazgos gastoPartido={gastoPartido} />
+        <GastoKPIs kpis={kpis} />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ChartBox
-            title="Comparativo de gasto: Meta en perspectiva"
-            sub="Gasto total en Meta (internas + nacionales) versus otras categorías de gasto declarado."
-          >
-            <GastoComparativoGlobal data={GASTO_TOTAL_COMPARATIVO} />
-          </ChartBox>
-
-          <ChartBox
-            title="Gasto en Meta vs. gasto en televisión por partido"
-            sub='El porcentaje indica qué fracción del gasto en TV representa el gasto total en Meta. Elecciones nacionales (primera vuelta).'
-          >
-            <GastoMetaVsTV data={GASTO_PARTIDO} />
-          </ChartBox>
-        </div>
+        <ChartBox
+          title="Gasto estimado en Meta por partido"
+          sub="Gasto promedio estimado acumulado (internas + nacionales). Basado en rangos reportados por Meta."
+        >
+          <div className="space-y-4 py-2">
+            {gastoPartido.map(p => (
+              <div key={p.partido}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-700">{p.partido}</span>
+                  <span className="text-sm font-mono text-gray-600">U$S {p.gasto_total.toLocaleString('es-UY')}</span>
+                </div>
+                <div className="flex gap-1 h-5">
+                  <div
+                    className="rounded-sm h-full"
+                    style={{
+                      width: `${(p.gasto_internas / Math.max(...gastoPartido.map(x => x.gasto_total))) * 100}%`,
+                      backgroundColor: p.color,
+                      opacity: 0.5,
+                    }}
+                    title={`Internas: U$S ${p.gasto_internas.toLocaleString('es-UY')}`}
+                  />
+                  <div
+                    className="rounded-sm h-full"
+                    style={{
+                      width: `${(p.gasto_nacionales / Math.max(...gastoPartido.map(x => x.gasto_total))) * 100}%`,
+                      backgroundColor: p.color,
+                      opacity: 0.85,
+                    }}
+                    title={`Nacionales: U$S ${p.gasto_nacionales.toLocaleString('es-UY')}`}
+                  />
+                </div>
+                <div className="flex gap-3 mt-0.5">
+                  <span className="text-xs text-gray-400">Internas: U$S {p.gasto_internas.toLocaleString('es-UY')}</span>
+                  <span className="text-xs text-gray-400">Nacionales: U$S {p.gasto_nacionales.toLocaleString('es-UY')}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartBox>
       </Section>
 
       {/* ── Sección 2: Elecciones internas ── */}
@@ -657,21 +737,19 @@ function PageGastos() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              La interna más desigual: el PN
+              La publicidad en las internas
             </h2>
             <Prose narrow>
-              Durante las elecciones internas (oct. 2023 – jun. 2024) se publicaron
-              6.955 anuncios. El PN concentró casi la mitad (49,9 %), seguido del FA
-              (24,9 %) y el PC (17,1 %). Álvaro Delgado casi duplicó en anuncios a
-              Laura Raffo y triplicó su gasto, reflejando la disparidad interna del PN.
+              Durante las elecciones internas (oct. 2023 – jun. 2024) cada partido desplegó
+              estrategias diferenciadas. La tabla muestra el desglose de anuncios, impresiones
+              estimadas y gasto por precandidato, basado en los promedios de rangos reportados por Meta.
             </Prose>
           </div>
           <div>
             <Prose>
-              En contraste, dentro del FA las proporciones de gasto de Orsi y Cosse
-              fueron similares (46,4 % vs 48,9 %). El PC presentó una interna más
-              fragmentada con cuatro candidatos relevantes. El total de impresiones
-              superó los 515 millones de visualizaciones promedio.
+              Los datos reflejan la actividad registrada en la Meta Ad Library. Las impresiones
+              y gastos son promedios de los rangos inferior y superior reportados por la plataforma.
+              Hacé clic en las columnas para ordenar.
             </Prose>
           </div>
         </div>
@@ -681,7 +759,7 @@ function PageGastos() {
           sub="Hacé clic en el encabezado de cada columna para ordenar. Las barras muestran el valor relativo dentro del corpus."
           gray
         >
-          <InternasTable data={INTERNAS_CANDIDATOS} />
+          <InternasTable data={internasCandidatos} />
         </ChartBox>
       </Section>
 
@@ -691,22 +769,19 @@ function PageGastos() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
           <div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              El FA logra más alcance con menos gasto
+              Partidos en la primera vuelta
             </h2>
             <Prose narrow>
-              En la primera vuelta (jul.–oct. 2024) el PN lideró en volumen de
-              anuncios (2.461) y gasto (U$S 285.107). Sin embargo, el FA obtuvo más
-              impresiones (184,6 M) que el PN (143,9 M), a pesar de gastar menos,
-              con una eficiencia de 710 impresiones por dólar frente a 505 del PN.
+              En la primera vuelta (jul.–oct. 2024) se analizaron los anuncios publicados por
+              los principales partidos. La comparación muestra volumen de anuncios, impresiones
+              estimadas y gasto promedio, permitiendo evaluar la eficiencia publicitaria de cada partido.
             </Prose>
           </div>
           <div>
             <Prose>
-              Esta diferencia sugiere estrategias publicitarias distintas: el FA apostó
-              a anuncios de mayor duración o mejor segmentación, mientras que el PN
-              concentró su pauta en el período más intenso de campaña. El PC, pese a
-              tener menos anuncios que el FA, logró impresiones comparables en las
-              internas por mantener anuncios activos por más tiempo.
+              Las métricas de impresiones por dólar permiten comparar la eficiencia del gasto
+              publicitario entre partidos. Los valores se basan en los promedios de rangos
+              reportados por Meta.
             </Prose>
           </div>
         </div>
@@ -716,14 +791,14 @@ function PageGastos() {
             title="Resultados por partido — elecciones nacionales"
             sub="Seleccioná la métrica para comparar partidos. Primera vuelta, jul.–oct. 2024."
           >
-            <NacionalesBar data={NACIONALES_PARTIDOS} />
+            <NacionalesBar data={nacionalesPartidos} />
           </ChartBox>
 
           <ChartBox
             title="Top 5 cuentas por anuncios, gasto e impresiones"
             sub="Elecciones nacionales (primera vuelta). Las impresiones son promedios de rangos reportados por Meta."
           >
-            <TopCuentas data={TOP_CUENTAS} />
+            <TopCuentas data={topCuentas} />
           </ChartBox>
         </div>
       </Section>
@@ -738,15 +813,44 @@ export default function App() {
   const [selectedParties,    setSelectedParties]    = useState([])
   const [selectedEtapa,      setSelectedEtapa]      = useState('Todas')
   const [selectedTerritorio, setSelectedTerritorio] = useState([])
+  const [tableData,    setTableData]    = useState([])
+  const [loadingData,  setLoadingData]  = useState(true)
 
+  useEffect(() => {
+    fetch('/data/realData.json')
+      .then(r => r.json())
+      .then(raw => { setTableData(processData(raw)); setLoadingData(false) })
+      .catch(() => setLoadingData(false))
+  }, [])
+
+  // ── Filtrado de tabla ──
   const filteredTable = useMemo(() => {
-    let rows = TABLE_DATA
+    let rows = tableData
     if (selectedParties.length > 0)
-      rows = rows.filter(r => selectedParties.includes(r.part_org))
-    if (selectedTerritorio.length > 0)
-      rows = rows.filter(r => selectedTerritorio.includes(r.departamento_nacional))
+      rows = rows.filter(r => selectedParties.includes(r.part_org) || selectedParties.includes(r.part_org_normalized))
+    if (selectedEtapa !== 'Todas')
+      rows = rows.filter(r => r.etapa === selectedEtapa)
+    if (selectedTerritorio.length > 0) {
+      rows = rows.filter(r => {
+        const d = r.departamento_nacional
+        if (selectedTerritorio.includes('Nacional') && (!d || d === 'Nacional')) return true
+        if (selectedTerritorio.includes('Montevideo') && d === 'Montevideo') return true
+        if (selectedTerritorio.includes('Interior') && d && d !== 'Nacional' && d !== 'Montevideo') return true
+        return false
+      })
+    }
     return rows
-  }, [selectedParties, selectedTerritorio])
+  }, [tableData, selectedParties, selectedEtapa, selectedTerritorio])
+
+  // ── Datos computados desde datos reales ──
+  const gastoMeta = useMemo(() => computeGastoMeta(tableData), [tableData])
+  const gastoPartido = useMemo(() => computeGastoPartido(tableData), [tableData])
+  const internasCandidatos = useMemo(() => computeInternasCandidatos(tableData), [tableData])
+  const nacionalesPartidos = useMemo(() => computeNacionalesPartidos(tableData), [tableData])
+  const topCuentas = useMemo(() => computeTopCuentas(tableData), [tableData])
+  const deptData = useMemo(() => computeDeptDistribution(filteredTable), [filteredTable])
+  const kpis = useMemo(() => computeKPIs(tableData, gastoMeta), [tableData, gastoMeta])
+  const filteredStats = useMemo(() => computeFilteredStats(filteredTable), [filteredTable])
 
   const navigate = (target) => {
     setPage(target)
@@ -760,14 +864,26 @@ export default function App() {
       {page === 'home' && (
         <PageHome
           filteredTable={filteredTable}
+          loadingData={loadingData}
           selectedParties={selectedParties}    setSelectedParties={setSelectedParties}
           selectedEtapa={selectedEtapa}        setSelectedEtapa={setSelectedEtapa}
           selectedTerritorio={selectedTerritorio} setSelectedTerritorio={setSelectedTerritorio}
+          deptData={deptData}
+          filteredStats={filteredStats}
         />
       )}
       {page === 'metodologia' && <PageMetodologia />}
       {page === 'equipo'      && <PageEquipo />}
-      {page === 'gastos'      && <PageGastos />}
+      {page === 'gastos' && (
+        <PageGastos
+          kpis={kpis}
+          gastoPartido={gastoPartido}
+          internasCandidatos={internasCandidatos}
+          nacionalesPartidos={nacionalesPartidos}
+          topCuentas={topCuentas}
+          loadingData={loadingData}
+        />
+      )}
 
       <Footer page={page} onNavigate={navigate} />
     </div>
