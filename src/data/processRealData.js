@@ -89,6 +89,9 @@ function processRow(row) {
     texto_anuncio_completo: cleanText(row.texto_anuncio_completo),
     part_org_normalized: normalizePartido(row.part_org),
     etapa: normalizeEtapa(row.tipo_eleccion),
+    // Campos que DataTable espera (compatibilidad mock → real)
+    _gasto: gasto > 0 ? `U$S ${Math.round(gasto).toLocaleString('es-UY')}` : '—',
+    _impresiones: Math.round(imp),
   }
 }
 
@@ -361,9 +364,9 @@ export function computeFilteredStats(rows) {
     byParty,
     top5: Array.from({ length: 5 }, (_, i) => ({
       ranking: i + 1,
-      anuncios: topAnuncios[i] || null,
-      gasto: topGasto[i] || null,
-      impresiones: topImp[i] || null,
+      anuncios: topAnuncios[i] ? { nombre: topAnuncios[i].nombre, valor: topAnuncios[i].anuncios } : null,
+      gasto: topGasto[i] ? { nombre: topGasto[i].nombre, valor: topGasto[i].gasto } : null,
+      impresiones: topImp[i] ? { nombre: topImp[i].nombre, valor: topImp[i].impresiones } : null,
     })),
   }
 }

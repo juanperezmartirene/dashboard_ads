@@ -52,7 +52,7 @@ export default function DataTable({ data }) {
     }
 
     if (partido !== 'Todos') {
-      rows = rows.filter(r => r.part_org === partido)
+      rows = rows.filter(r => r.part_org === partido || r.part_org_normalized === partido)
     }
 
     if (sort.key) {

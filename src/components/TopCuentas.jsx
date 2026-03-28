@@ -41,27 +41,31 @@ export default function TopCuentas({ data }) {
 
             {/* Filas */}
             <div className="space-y-1">
-              {data.map((row, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-sm border border-gray-100 hover:border-gray-200 transition-colors"
-                >
-                  <span
-                    className="text-xs font-mono font-bold w-4 shrink-0"
-                    style={{ color: col.color }}
+              {data.map((row, i) => {
+                const item = row[col.key]
+                if (!item) return null
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-sm border border-gray-100 hover:border-gray-200 transition-colors"
                   >
-                    {row.ranking}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-700 truncate">
-                      {row[col.key].nombre}
-                    </p>
-                    <p className="text-xs font-mono text-gray-400">
-                      {col.fmt(row[col.key].valor)}
-                    </p>
+                    <span
+                      className="text-xs font-mono font-bold w-4 shrink-0"
+                      style={{ color: col.color }}
+                    >
+                      {row.ranking}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-700 truncate">
+                        {item.nombre}
+                      </p>
+                      <p className="text-xs font-mono text-gray-400">
+                        {col.fmt(item.valor)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ))}
