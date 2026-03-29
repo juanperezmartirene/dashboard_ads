@@ -455,9 +455,10 @@ export default function DataTable({ data }) {
                   <TableRow
                     key={row.id}
                     className={cn(
-                      'transition-colors',
+                      'cursor-pointer transition-colors',
                       isOpen ? 'bg-blue-50/60' : 'hover:bg-blue-50/40'
                     )}
+                    onClick={() => openDetail(row)}
                   >
                     {/* Página */}
                     <TableCell className="text-sm font-medium text-gray-700 max-w-[160px]">
@@ -543,20 +544,16 @@ export default function DataTable({ data }) {
 
                     {/* Botón expand — trigger del morphing */}
                     <TableCell className="text-center px-2">
-                      <motion.button
+                      <motion.div
                         layoutId={layoutId}
-                        onClick={() => openDetail(row)}
                         className={cn(
-                          'inline-flex items-center justify-center rounded p-1 transition-colors',
-                          isOpen
-                            ? 'text-blue-500'
-                            : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'
+                          'inline-flex items-center justify-center rounded p-1',
+                          isOpen ? 'text-blue-500' : 'text-gray-400'
                         )}
-                        title="Ver detalle del anuncio"
                         style={{ borderRadius: 6 }}
                       >
                         <Maximize2 className="size-3.5" />
-                      </motion.button>
+                      </motion.div>
                     </TableCell>
                   </TableRow>
                 )
