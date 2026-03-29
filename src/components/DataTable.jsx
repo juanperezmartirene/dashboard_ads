@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText } from 'lucide-react'
+import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const PARTY_COLORS = {
@@ -18,24 +18,40 @@ const PARTY_COLORS = {
   'Otros':            { bg: '#F3F4F6', color: '#6B7280' },
 }
 
-const TYPE_BADGE = {
-  video:  { bg: '#EFF6FF', color: '#3B82F6', label: 'Video' },
-  imagen: { bg: '#FEF3C7', color: '#D97706', label: 'Imagen' },
+const TIPOLOGIA_LABELS = {
+  advocacy:       { label: 'Promoción',  color: '#6366F1' },
+  attack:         { label: 'Ataque',     color: '#EF4444' },
+  image:          { label: 'Imagen',     color: '#F59E0B' },
+  issue:          { label: 'Tema',       color: '#10B981' },
+  call_to_action: { label: 'CTA',       color: '#3B82F6' },
+  ceremonial:     { label: 'Ceremonial', color: '#8B5CF6' },
+}
+
+const ETAPA_BADGE = {
+  Internas:    { bg: '#EFF6FF', color: '#3B82F6' },
+  Nacionales:  { bg: '#FEF3C7', color: '#D97706' },
+  Ballottage:  { bg: '#F3E8FF', color: '#7C3AED' },
+}
+
+function getTipologias(row) {
+  return Object.entries(TIPOLOGIA_LABELS)
+    .filter(([key]) => row[key] === 1 || row[key] === '1')
+    .map(([key, val]) => ({ key, ...val }))
 }
 
 const PARTIDOS = ['Todos', 'Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
-const TIPOS    = ['Todos', 'video', 'imagen']
+const ETAPAS   = ['Todas', 'Internas', 'Nacionales', 'Ballottage']
 
 const COLS = [
-  { key: 'page_name',             label: 'Página',      sortable: true,  width: 'max-w-[160px]' },
-  { key: 'part_org',              label: 'Partido',      sortable: true  },
-  { key: 'text_body',             label: 'Texto',        sortable: false, width: 'max-w-[240px]' },
-  { key: 'tipo',                  label: 'Tipo',         sortable: true  },
-  { key: 'departamento_nacional', label: 'Alcance',      sortable: true  },
-  { key: 'etapa',                 label: 'Etapa',        sortable: true  },
-  { key: 'promedio_gasto',        label: 'Gasto',        sortable: true  },
-  { key: 'promedio_impresiones',  label: 'Impresiones',  sortable: true  },
-  { key: '_link',                 label: '',             sortable: false },
+  { key: 'page_name',             label: 'Página',          sortable: true,  width: 'max-w-[160px]' },
+  { key: 'part_org',              label: 'Partido',         sortable: true  },
+  { key: 'text_body',             label: 'Texto',           sortable: false, width: 'max-w-[220px]' },
+  { key: 'etapa',                 label: 'Tipo elección',   sortable: true  },
+  { key: 'departamento_nacional', label: 'Alcance',         sortable: true  },
+  { key: 'promedio_gasto',        label: 'Gasto prom.',     sortable: true  },
+  { key: 'promedio_impresiones',  label: 'Imp. prom.',      sortable: true  },
+  { key: '_tipologia',            label: 'Tipología',       sortable: false },
+  { key: '_link',                 label: '',                sortable: false },
 ]
 
 const PAGE_SIZE = 20
@@ -55,8 +71,10 @@ function AdModal({ row, onClose }) {
 
   const texto = row.text_body || row.texto_anuncio_completo || '—'
   const partyColor = PARTY_COLORS[row.part_org] || PARTY_COLORS['Otros']
+  const etapaBadge = ETAPA_BADGE[row.etapa]
   const metaUrl = `https://www.facebook.com/ads/library/?id=${row.id}`
   const fechas = [row.ad_delivery_start_time, row.ad_delivery_stop_time].filter(Boolean).join(' → ')
+  const tipologias = getTipologias(row)
 
   return (
     <div
@@ -73,22 +91,22 @@ function AdModal({ row, onClose }) {
         <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex-1 min-w-0 mr-4">
             <p className="text-sm font-semibold text-gray-800 truncate">{row.page_name}</p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded"
                 style={{ backgroundColor: partyColor.bg, color: partyColor.color }}
               >
                 {row.part_org}
               </span>
-              {row.tipo && TYPE_BADGE[row.tipo] && (
+              {row.etapa && etapaBadge && (
                 <span
                   className="text-xs font-medium px-2 py-0.5 rounded"
-                  style={{ backgroundColor: TYPE_BADGE[row.tipo].bg, color: TYPE_BADGE[row.tipo].color }}
+                  style={{ backgroundColor: etapaBadge.bg, color: etapaBadge.color }}
                 >
-                  {TYPE_BADGE[row.tipo].label}
+                  {row.etapa}
                 </span>
               )}
-              {row.etapa && (
+              {row.etapa && !etapaBadge && (
                 <span className="text-xs text-gray-400">{row.etapa}</span>
               )}
             </div>
@@ -131,8 +149,30 @@ function AdModal({ row, onClose }) {
           </div>
           <div>
             <p className="text-xs text-gray-400 flex items-center gap-1"><Calendar className="size-3" /> Período</p>
-            <p className="text-sm font-semibold text-gray-800 mt-0.5">{fechas || row.fecha || '—'}</p>
+            <p className="text-sm font-semibold text-gray-800 mt-0.5">{fechas || row._fecha || row.fecha || '—'}</p>
           </div>
+        </div>
+
+        {/* Tipología */}
+        <div className="px-6 py-3 border-b border-gray-100">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+            <Tag className="size-3" /> Tipología (ROUBERTa)
+          </p>
+          {tipologias.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {tipologias.map(t => (
+                <span
+                  key={t.key}
+                  className="text-xs font-medium px-2.5 py-1 rounded"
+                  style={{ backgroundColor: t.color + '18', color: t.color }}
+                >
+                  {t.label}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-300 italic">Sin clasificación disponible</p>
+          )}
         </div>
 
         {/* Texto del anuncio */}
@@ -167,6 +207,12 @@ function AdModal({ row, onClose }) {
               </span>
             </div>
           )}
+          {row.etapa && (
+            <div>
+              <span className="text-gray-400">Tipo de elección:</span>{' '}
+              <span className="text-gray-700 font-medium">{row.etapa}</span>
+            </div>
+          )}
           {row.id && (
             <div>
               <span className="text-gray-400">ID anuncio:</span>{' '}
@@ -178,7 +224,7 @@ function AdModal({ row, onClose }) {
         {/* Botón a Meta Ad Library */}
         <div className="px-6 py-4 flex items-center justify-between">
           <p className="text-xs text-gray-400">
-            Datos de Meta Ad Library · {row.fecha || '—'}
+            Datos de Meta Ad Library · {row._fecha || row.fecha || '—'}
           </p>
           <a
             href={metaUrl}
@@ -199,12 +245,12 @@ function AdModal({ row, onClose }) {
 // ── Tabla principal ───────────────────────────────────────────────────────────
 
 export default function DataTable({ data }) {
-  const [sort,       setSort]       = useState({ key: 'promedio_gasto', dir: 'desc' })
-  const [search,     setSearch]     = useState('')
-  const [partido,    setPartido]    = useState('Todos')
-  const [tipoFilter, setTipoFilter] = useState('Todos')
-  const [page,       setPage]       = useState(0)
-  const [selected,   setSelected]   = useState(null)
+  const [sort,        setSort]        = useState({ key: 'promedio_gasto', dir: 'desc' })
+  const [search,      setSearch]      = useState('')
+  const [partido,     setPartido]     = useState('Todos')
+  const [etapaFilter, setEtapaFilter] = useState('Todas')
+  const [page,        setPage]        = useState(0)
+  const [selected,    setSelected]    = useState(null)
 
   const filtered = useMemo(() => {
     let rows = [...data]
@@ -223,8 +269,8 @@ export default function DataTable({ data }) {
       rows = rows.filter(r => r.part_org === partido || r.part_org_normalized === partido)
     }
 
-    if (tipoFilter !== 'Todos') {
-      rows = rows.filter(r => r.tipo === tipoFilter)
+    if (etapaFilter !== 'Todas') {
+      rows = rows.filter(r => r.etapa === etapaFilter)
     }
 
     if (sort.key) {
@@ -239,7 +285,7 @@ export default function DataTable({ data }) {
     }
 
     return rows
-  }, [data, search, partido, tipoFilter, sort])
+  }, [data, search, partido, etapaFilter, sort])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages - 1)
@@ -252,14 +298,14 @@ export default function DataTable({ data }) {
 
   const handleSearch  = (val) => { setSearch(val); setPage(0) }
   const handlePartido = (val) => { setPartido(val); setPage(0) }
-  const handleTipo    = (val) => { setTipoFilter(val); setPage(0) }
+  const handleEtapa   = (val) => { setEtapaFilter(val); setPage(0) }
 
   const reset = () => {
-    setSearch(''); setPartido('Todos'); setTipoFilter('Todos')
+    setSearch(''); setPartido('Todos'); setEtapaFilter('Todas')
     setSort({ key: 'promedio_gasto', dir: 'desc' }); setPage(0)
   }
 
-  const hasFilters = search.trim() || partido !== 'Todos' || tipoFilter !== 'Todos'
+  const hasFilters = search.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
 
   return (
     <div>
@@ -281,13 +327,13 @@ export default function DataTable({ data }) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={tipoFilter} onValueChange={handleTipo}>
-          <SelectTrigger className="w-[130px] text-sm">
-            <SelectValue placeholder="Tipo" />
+        <Select value={etapaFilter} onValueChange={handleEtapa}>
+          <SelectTrigger className="w-[160px] text-sm">
+            <SelectValue placeholder="Tipo elección" />
           </SelectTrigger>
           <SelectContent>
-            {TIPOS.map(t => (
-              <SelectItem key={t} value={t}>{t === 'Todos' ? 'Todos los tipos' : t.charAt(0).toUpperCase() + t.slice(1)}</SelectItem>
+            {ETAPAS.map(e => (
+              <SelectItem key={e} value={e}>{e}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -338,6 +384,8 @@ export default function DataTable({ data }) {
               </TableRow>
             ) : paged.map(row => {
               const partyC = PARTY_COLORS[row.part_org] || PARTY_COLORS['Otros']
+              const etapaBdg = ETAPA_BADGE[row.etapa]
+              const tipologias = getTipologias(row)
               return (
                 <TableRow
                   key={row.id}
@@ -360,7 +408,7 @@ export default function DataTable({ data }) {
                   </TableCell>
 
                   {/* Texto */}
-                  <TableCell className="text-sm text-gray-500 max-w-[240px]">
+                  <TableCell className="text-sm text-gray-500 max-w-[220px]">
                     <span
                       className="block truncate"
                       title={row.text_body || row.texto_anuncio_completo}
@@ -369,15 +417,17 @@ export default function DataTable({ data }) {
                     </span>
                   </TableCell>
 
-                  {/* Tipo */}
+                  {/* Tipo de elección */}
                   <TableCell>
-                    {row.tipo && TYPE_BADGE[row.tipo] ? (
+                    {row.etapa && etapaBdg ? (
                       <span
-                        className="text-xs font-medium px-2 py-0.5 rounded"
-                        style={{ backgroundColor: TYPE_BADGE[row.tipo].bg, color: TYPE_BADGE[row.tipo].color }}
+                        className="text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap"
+                        style={{ backgroundColor: etapaBdg.bg, color: etapaBdg.color }}
                       >
-                        {TYPE_BADGE[row.tipo].label}
+                        {row.etapa}
                       </span>
+                    ) : row.etapa ? (
+                      <span className="text-xs text-gray-500">{row.etapa}</span>
                     ) : (
                       <span className="text-xs text-gray-300">—</span>
                     )}
@@ -388,23 +438,40 @@ export default function DataTable({ data }) {
                     {row.departamento_nacional || '—'}
                   </TableCell>
 
-                  {/* Etapa */}
-                  <TableCell className="text-xs text-gray-500 whitespace-nowrap">
-                    {row.etapa || '—'}
-                  </TableCell>
-
-                  {/* Gasto */}
+                  {/* Gasto promedio */}
                   <TableCell className="text-sm text-gray-600 whitespace-nowrap font-mono text-right">
                     {row.promedio_gasto > 0
                       ? `$${Math.round(row.promedio_gasto).toLocaleString('es-UY')}`
                       : '—'}
                   </TableCell>
 
-                  {/* Impresiones */}
+                  {/* Impresiones promedio */}
                   <TableCell className="text-sm text-gray-600 whitespace-nowrap font-mono text-right">
                     {row.promedio_impresiones > 0
                       ? Math.round(row.promedio_impresiones).toLocaleString('es-UY')
                       : '—'}
+                  </TableCell>
+
+                  {/* Tipología */}
+                  <TableCell className="max-w-[180px]">
+                    {tipologias.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {tipologias.slice(0, 2).map(t => (
+                          <span
+                            key={t.key}
+                            className="text-[10px] font-medium px-1.5 py-0.5 rounded whitespace-nowrap"
+                            style={{ backgroundColor: t.color + '18', color: t.color }}
+                          >
+                            {t.label}
+                          </span>
+                        ))}
+                        {tipologias.length > 2 && (
+                          <span className="text-[10px] text-gray-400">+{tipologias.length - 2}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </TableCell>
 
                   {/* Link externo */}
