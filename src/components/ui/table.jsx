@@ -30,9 +30,9 @@ export function TableHead({ children, className = '' }) {
   )
 }
 
-export function TableRow({ children, className = '' }) {
+export function TableRow({ children, className = '', ...props }) {
   return (
-    <tr className={`border-b hover:bg-gray-50 ${className}`}>
+    <tr className={`border-b hover:bg-gray-50 ${className}`} {...props}>
       {children}
     </tr>
   )
