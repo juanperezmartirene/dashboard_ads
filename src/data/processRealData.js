@@ -272,6 +272,167 @@ export function computeTopCuentas(rows) {
   }))
 }
 
+// ─── Constantes de tipos de anuncio ─────────────────────────────────────────
+export const TIPOS_META = [
+  { key: 'advocacy',   label: 'Promoción',          color: '#6366F1' },
+  { key: 'cta',        label: 'Llamado a la acción', color: '#3B82F6' },
+  { key: 'issue',      label: 'Tema',                color: '#10B981' },
+  { key: 'image',      label: 'Imagen',              color: '#F59E0B' },
+  { key: 'ceremonial', label: 'Ceremonial',          color: '#8B5CF6' },
+  { key: 'atack',      label: 'Ataque',              color: '#EF4444' },
+]
+
+// ─── Mergear clasificaciones ─────────────────────────────────────────────────
+export function mergeClasificacion(rows, clasificacion) {
+  return rows.map(r => {
+    const c = clasificacion[String(r.id)]
+    if (!c) return r
+    return { ...r, _clasi: c }
+  })
+}
+
+// ─── Cómputos para la página Tipos de anuncios ──────────────────────────────
+
+// Solo filas con clasificación
+function clasRows(rows) {
+  return rows.filter(r => r._clasi)
+}
+
+// Totales por tipo
+export function computeTiposTotales(rows) {
+  const cr = clasRows(rows)
+  return TIPOS_META.map(t => ({
+    ...t,
+    count: cr.filter(r => r._clasi[t.key] === 1).length,
+    total: cr.length,
+  }))
+}
+
+// Combinaciones: advocacy/atack × image/issue
+export function computeCombinaciones(rows) {
+  const cr = clasRows(rows)
+  return [
+    { label: 'Promoción programática', count: cr.filter(r => r._clasi.advocacy === 1 && r._clasi.issue === 1).length, color: '#10B981' },
+    { label: 'Promoción de imagen',    count: cr.filter(r => r._clasi.advocacy === 1 && r._clasi.image === 1).length,  color: '#0EA5E9' },
+    { label: 'Ataque programático',    count: cr.filter(r => r._clasi.atack === 1    && r._clasi.issue === 1).length,  color: '#F59E0B' },
+    { label: 'Ataque de imagen',       count: cr.filter(r => r._clasi.atack === 1    && r._clasi.image === 1).length,  color: '#EF4444' },
+  ]
+}
+
+// Distribución por etapa
+export function computeTiposPorEtapa(rows) {
+  const etapas = ['Internas', 'Nacionales', 'Ballottage']
+  return etapas.map(etapa => {
+    const etapaRows = clasRows(rows).filter(r => r.etapa === etapa)
+    const n = etapaRows.length
+    const tipos = TIPOS_META.map(t => ({
+      key: t.key,
+      label: t.label,
+      color: t.color,
+      count: etapaRows.filter(r => r._clasi[t.key] === 1).length,
+      pct: n > 0 ? +(etapaRows.filter(r => r._clasi[t.key] === 1).length / n * 100).toFixed(1) : 0,
+    }))
+    return { etapa, n, tipos }
+  })
+}
+
+// Distribución por partido
+export function computeTiposPorPartido(rows) {
+  const parties = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
+  return parties.map(p => {
+    const pRows = clasRows(rows).filter(r => r.part_org_normalized === p)
+    const n = pRows.length
+    const tipos = TIPOS_META.map(t => ({
+      key: t.key,
+      label: t.label,
+      color: t.color,
+      count: pRows.filter(r => r._clasi[t.key] === 1).length,
+      pct: n > 0 ? +(pRows.filter(r => r._clasi[t.key] === 1).length / n * 100).toFixed(1) : 0,
+    }))
+    return {
+      partido: p,
+      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      color: PARTY_COLORS[p] || '#6B7280',
+      n,
+      tipos,
+    }
+  })
+}
+
+// Gasto e impresiones por tipo, por partido (Figura 9)
+export function computeGastoImpPorTipo(rows) {
+  const parties = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
+  const sum = (arr, f) => arr.reduce((s, r) => s + (Number(r[f]) || 0), 0)
+
+  return parties.map(p => {
+    const pRows = clasRows(rows).filter(r => r.part_org_normalized === p)
+    const totalGasto = sum(pRows, 'promedio_gasto')
+    const totalImp = sum(pRows, 'promedio_impresiones')
+
+    const tipos = TIPOS_META.map(t => {
+      const tRows = pRows.filter(r => r._clasi[t.key] === 1)
+      const g = sum(tRows, 'promedio_gasto')
+      const imp = sum(tRows, 'promedio_impresiones')
+      return {
+        key: t.key,
+        label: t.label,
+        color: t.color,
+        gasto: Math.round(g),
+        impresiones: Math.round(imp),
+        pctGasto: totalGasto > 0 ? +(g / totalGasto * 100).toFixed(1) : 0,
+        pctImp: totalImp > 0 ? +(imp / totalImp * 100).toFixed(1) : 0,
+      }
+    })
+
+    return {
+      partido: p,
+      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      color: PARTY_COLORS[p] || '#6B7280',
+      tipos,
+    }
+  })
+}
+
+// Distribución por territorio (Figura 10)
+export function computeTiposPorTerritorio(rows) {
+  const classify = r => {
+    const d = r.departamento_code
+    if (!d || d === 'Nacional') return 'Nacional'
+    if (d === 'MO') return 'Montevideo'
+    return 'Interior'
+  }
+
+  const territorios = ['Nacional', 'Montevideo', 'Interior']
+  return territorios.map(t => {
+    const tRows = clasRows(rows).filter(r => classify(r) === t)
+    const n = tRows.length
+    const tipos = TIPOS_META.map(tipo => ({
+      key: tipo.key,
+      label: tipo.label,
+      color: tipo.color,
+      count: tRows.filter(r => r._clasi[tipo.key] === 1).length,
+      pct: n > 0 ? +(tRows.filter(r => r._clasi[tipo.key] === 1).length / n * 100).toFixed(1) : 0,
+    }))
+    return { territorio: t, n, tipos }
+  })
+}
+
+// Serie temporal mensual por tipo (Figura 6)
+export function computeSerieTemporal(rows) {
+  const cr = clasRows(rows)
+  const byMonth = {}
+  cr.forEach(r => {
+    const m = r.fecha
+    if (!m) return
+    if (!byMonth[m]) byMonth[m] = { fecha: m }
+    TIPOS_META.forEach(t => {
+      byMonth[m][t.key] = (byMonth[m][t.key] || 0) + (r._clasi[t.key] === 1 ? 1 : 0)
+      byMonth[m].total = (byMonth[m].total || 0) + (r._clasi[t.key] === 1 ? 1 : 0)
+    })
+  })
+  return Object.values(byMonth).sort((a, b) => a.fecha.localeCompare(b.fecha))
+}
+
 // ─── Computar datos para charts de Home ─────────────────────────────────────
 
 export function computeTimeSeries(rows) {

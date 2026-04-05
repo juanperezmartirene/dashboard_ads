@@ -4,10 +4,11 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Button, buttonVariants } from '@/components/ui/button'
 
 const PAGE_LINKS = [
-  { id: 'home',        label: 'Inicio'      },
-  { id: 'gastos',      label: 'Gastos'      },
-  { id: 'metodologia', label: 'Metodología' },
-  { id: 'equipo',      label: 'Equipo'      },
+  { id: 'home',        label: 'Inicio'       },
+  { id: 'gastos',      label: 'Gastos'       },
+  { id: 'tipos',       label: 'Tipos'        },
+  { id: 'metodologia', label: 'Metodología'  },
+  { id: 'equipo',      label: 'Equipo'       },
 ]
 
 const HOME_SECTIONS = [
@@ -22,6 +23,14 @@ const GASTOS_SECTIONS = [
   { href: '#gasto-contexto',   label: 'Contexto'  },
   { href: '#gasto-internas',   label: 'Internas'  },
   { href: '#gasto-nacionales', label: 'Nacionales' },
+]
+
+const TIPOS_SECTIONS = [
+  { href: '#tipos-intro',        label: 'Clasificación' },
+  { href: '#tipos-totales',      label: 'Distribución'  },
+  { href: '#tipos-temporal',     label: 'Evolución'     },
+  { href: '#tipos-etapa-partido',label: 'Etapa/Partido' },
+  { href: '#tipos-gasto-imp',    label: 'Gasto'         },
 ]
 
 const METOD_SECTIONS = [
@@ -39,6 +48,11 @@ const PAGE_HEROES = {
     title: 'Gasto y estrategias de publicidad en Meta · Uruguay 2024',
     sub: 'Análisis de 12.976 anuncios de las elecciones internas y la primera vuelta nacional. Gasto, impresiones y segmentación por partido y candidato.',
   },
+  tipos: {
+    title: 'Tipos de anuncios · Clasificación con ROUBERTa',
+    sub: `Clasificación de 12.096 anuncios en seis categorías funcionales mediante aprendizaje automático supervisado.
+    Distribución por etapa electoral, partido político y alcance territorial.`,
+  },
   metodologia: {
     title: 'Metodología',
     sub: 'Cómo recolectamos, etiquetamos y clasificamos los anuncios. Qué mide cada categoría.',
@@ -54,6 +68,7 @@ export default function Header({ page, onNavigate }) {
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
   const sections = page === 'home' ? HOME_SECTIONS
     : page === 'gastos'      ? GASTOS_SECTIONS
+    : page === 'tipos'       ? TIPOS_SECTIONS
     : page === 'metodologia' ? METOD_SECTIONS
     : []
 

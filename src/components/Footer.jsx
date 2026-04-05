@@ -1,5 +1,7 @@
 const LINKS = [
   { id: 'home',        label: 'Inicio'      },
+  { id: 'gastos',      label: 'Gastos'      },
+  { id: 'tipos',       label: 'Tipos'       },
   { id: 'metodologia', label: 'Metodología' },
   { id: 'equipo',      label: 'Equipo'      },
 ]

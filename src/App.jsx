@@ -8,12 +8,16 @@ import InternasTable from './components/InternasTable'
 import NacionalesBar from './components/NacionalesBar'
 import TopCuentas from './components/TopCuentas'
 import {
-  processData,
+  processData, mergeClasificacion,
   computeGastoMeta, computeGastoPartido,
   computeInternasCandidatos, computeNacionalesPartidos,
   computeTopCuentas, computeDeptDistribution, computeKPIs,
   computeFilteredStats,
+  computeTiposTotales, computeCombinaciones, computeTiposPorEtapa,
+  computeTiposPorPartido, computeGastoImpPorTipo, computeTiposPorTerritorio,
+  computeSerieTemporal,
 } from './data/processRealData'
+import PageTipos from './components/PageTipos'
 
 // ─── Layout primitives ────────────────────────────────────────────────────────
 
@@ -817,10 +821,13 @@ export default function App() {
   const [loadingData,  setLoadingData]  = useState(true)
 
   useEffect(() => {
-    fetch('/data/realData.json')
-      .then(r => r.json())
-      .then(raw => { setTableData(processData(raw)); setLoadingData(false) })
-      .catch(() => setLoadingData(false))
+    Promise.all([
+      fetch('/data/realData.json').then(r => r.json()),
+      fetch('/data/clasificacion.json').then(r => r.json()).catch(() => ({})),
+    ]).then(([raw, clasif]) => {
+      setTableData(mergeClasificacion(processData(raw), clasif))
+      setLoadingData(false)
+    }).catch(() => setLoadingData(false))
   }, [])
 
   // ── Filtrado de tabla ──
@@ -843,6 +850,15 @@ export default function App() {
   }, [tableData, selectedParties, selectedEtapa, selectedTerritorio])
 
   // ── Datos computados desde datos reales ──
+  // ── Datos de tipos de anuncios ──
+  const tiposTotales     = useMemo(() => computeTiposTotales(tableData),     [tableData])
+  const combinaciones    = useMemo(() => computeCombinaciones(tableData),    [tableData])
+  const tiposPorEtapa    = useMemo(() => computeTiposPorEtapa(tableData),    [tableData])
+  const tiposPorPartido  = useMemo(() => computeTiposPorPartido(tableData),  [tableData])
+  const gastoImpPorTipo  = useMemo(() => computeGastoImpPorTipo(tableData),  [tableData])
+  const tiposPorTerr     = useMemo(() => computeTiposPorTerritorio(tableData), [tableData])
+  const serieTemporal    = useMemo(() => computeSerieTemporal(tableData),    [tableData])
+
   const gastoMeta = useMemo(() => computeGastoMeta(tableData), [tableData])
   const gastoPartido = useMemo(() => computeGastoPartido(tableData), [tableData])
   const internasCandidatos = useMemo(() => computeInternasCandidatos(tableData), [tableData])
@@ -874,6 +890,18 @@ export default function App() {
       )}
       {page === 'metodologia' && <PageMetodologia />}
       {page === 'equipo'      && <PageEquipo />}
+      {page === 'tipos' && (
+        <PageTipos
+          tiposTotales={tiposTotales}
+          combinaciones={combinaciones}
+          tiposPorEtapa={tiposPorEtapa}
+          tiposPorPartido={tiposPorPartido}
+          gastoImpPorTipo={gastoImpPorTipo}
+          tiposPorTerritorio={tiposPorTerr}
+          serieTemporal={serieTemporal}
+          loadingData={loadingData}
+        />
+      )}
       {page === 'gastos' && (
         <PageGastos
           kpis={kpis}
