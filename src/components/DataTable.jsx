@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, Fragment } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
@@ -8,6 +8,13 @@ import { Button } from '@/components/ui/button'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  Pagination, PaginationContent, PaginationEllipsis,
+  PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
+} from '@/components/ui/pagination'
 import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Maximize2, Image, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useClickOutside } from '@/hooks/use-click-outside'
@@ -108,6 +115,13 @@ function AdDetail({ row, layoutId, onClose }) {
   const ref = useRef(null)
   useClickOutside(ref, onClose)
 
+  // Cerrar con Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const texto      = row.text_body || row.texto_anuncio_completo || '—'
   const partyColor = PARTY_COLORS[row.part_org] || PARTY_COLORS['Otros']
   const etapaBadge = ETAPA_BADGE[row.etapa]
@@ -134,6 +148,9 @@ function AdDetail({ row, layoutId, onClose }) {
         <motion.div
           ref={ref}
           layoutId={layoutId}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Detalle del anuncio de ${row.page_name}`}
           className="bg-white rounded-sm shadow-xl border border-gray-200 w-full max-w-2xl max-h-[80vh] overflow-y-auto pointer-events-auto"
           style={{ borderRadius: 6 }}
         >
@@ -446,6 +463,7 @@ export default function DataTable({ data }) {
   const closeDetail = () => setSelected(null)
 
   return (
+    <TooltipProvider delay={400}>
     <MotionConfig transition={SPRING}>
       <div>
         {/* ── Filtros ── */}
@@ -554,12 +572,18 @@ export default function DataTable({ data }) {
 
                     {/* Texto */}
                     <TableCell className="text-sm text-gray-500 max-w-[220px]">
-                      <span
-                        className="block truncate"
-                        title={row.text_body || row.texto_anuncio_completo}
-                      >
-                        {row.text_body || row.texto_anuncio_completo || '—'}
-                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="block truncate cursor-default">
+                            {row.text_body || row.texto_anuncio_completo || '—'}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-sm text-xs">
+                          <p className="line-clamp-4 whitespace-pre-line">
+                            {row.text_body || row.texto_anuncio_completo || '—'}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
 
                     {/* Tipo de elección */}
@@ -611,7 +635,24 @@ export default function DataTable({ data }) {
                             </span>
                           ))}
                           {tipologias.length > 2 && (
-                            <span className="text-[10px] text-gray-400">+{tipologias.length - 2}</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="text-[10px] text-gray-400 cursor-default">+{tipologias.length - 2}</span>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom">
+                                <div className="flex flex-wrap gap-1">
+                                  {tipologias.slice(2).map(t => (
+                                    <span
+                                      key={t.key}
+                                      className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                                      style={{ backgroundColor: t.color + '18', color: t.color }}
+                                    >
+                                      {t.label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
                       ) : (
@@ -644,38 +685,46 @@ export default function DataTable({ data }) {
           <span>
             Mostrando {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, filtered.length)} de {filtered.length.toLocaleString('es-UY')}
           </span>
-          <div className="flex items-center gap-1 flex-wrap">
-            <Button
-              variant="outline" size="sm"
-              className="text-xs h-7 px-2"
-              onClick={() => setPage(p => Math.max(0, p - 1))}
-              disabled={safePage === 0}
-            >
-              ← Anterior
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i)
-              .filter(i => Math.abs(i - safePage) <= 2)
-              .map(i => (
-                <Button
-                  key={i}
-                  variant={i === safePage ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs h-7 w-7 p-0"
-                  style={i === safePage ? { backgroundColor: '#0096D1', borderColor: '#0096D1' } : {}}
-                  onClick={() => setPage(i)}
-                >
-                  {i + 1}
-                </Button>
-              ))}
-            <Button
-              variant="outline" size="sm"
-              className="text-xs h-7 px-2"
-              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-              disabled={safePage === totalPages - 1}
-            >
-              Siguiente →
-            </Button>
-          </div>
+          <Pagination className="justify-end w-auto mx-0">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  text="Anterior"
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  className={cn('text-xs', safePage === 0 && 'pointer-events-none opacity-40')}
+                />
+              </PaginationItem>
+              {(() => {
+                const pages = []
+                for (let i = 0; i < totalPages; i++) pages.push(i)
+                const visible = pages.filter(i => i === 0 || i === totalPages - 1 || Math.abs(i - safePage) <= 1)
+                return visible.map((i, idx, arr) => (
+                  <Fragment key={i}>
+                    {idx > 0 && arr[idx - 1] < i - 1 && (
+                      <PaginationItem><PaginationEllipsis /></PaginationItem>
+                    )}
+                    <PaginationItem>
+                      <PaginationLink
+                        isActive={i === safePage}
+                        onClick={() => setPage(i)}
+                        className="text-xs"
+                        style={i === safePage ? { backgroundColor: '#0096D1', borderColor: '#0096D1', color: '#fff' } : {}}
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  </Fragment>
+                ))
+              })()}
+              <PaginationItem>
+                <PaginationNext
+                  text="Siguiente"
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  className={cn('text-xs', safePage === totalPages - 1 && 'pointer-events-none opacity-40')}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
 
         {/* ── Morphing Detail Dialog ── */}
@@ -691,5 +740,6 @@ export default function DataTable({ data }) {
         </AnimatePresence>
       </div>
     </MotionConfig>
+    </TooltipProvider>
   )
 }
