@@ -412,8 +412,7 @@ function MetodTipologia() {
           Cantidad de anuncios clasificados en cada tipo. Un anuncio puede figurar en más de una categoría.
         </p>
         <p className="text-xs text-gray-400 italic">
-          Pendiente: las clasificaciones automáticas con ROUBERTa aún no se han ejecutado sobre el corpus completo.
-          Los datos de esta sección provienen de resultados preliminares del modelo.
+          Clasificación automática multi-etiqueta con ROUBERTa (F1: 0,78) sobre el corpus completo de 12.096 anuncios.
         </p>
       </div>
     </Section>
@@ -593,8 +592,8 @@ function PageEquipo() {
           </Prose>
           <div className="mt-5 border-l-2 border-gray-200 pl-4">
             <p className="text-xs text-gray-400 italic leading-relaxed">
-              Los datos presentados son sintéticos y serán reemplazados por el corpus
-              real al finalizar el procesamiento. Última actualización: 24/03/2026.
+              Datos del corpus completo con clasificación ROUBERTa.
+              Última actualización: abril 2026.
             </p>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Maximize2 } from 'lucide-react'
+import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Maximize2, Image, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useClickOutside } from '@/hooks/use-click-outside'
 
@@ -61,6 +61,49 @@ const PAGE_SIZE = 20
 
 // ── Morphing Ad Detail Dialog ─────────────────────────────────────────────────
 
+function useAdMedia(adId) {
+  const [media, setMedia] = useState({ type: null, loading: true })
+
+  useEffect(() => {
+    if (!adId) { setMedia({ type: null, loading: false }); return }
+    let cancelled = false
+
+    async function detect() {
+      // Check image first
+      try {
+        const imgRes = await fetch(`/media/images/elecciones_2024/${adId}_imagen.jpg`, { method: 'HEAD' })
+        const imgType = imgRes.headers.get('Content-Type') || ''
+        if (!cancelled && imgRes.ok && imgType.startsWith('image/')) {
+          setMedia({ type: 'image', src: `/media/images/elecciones_2024/${adId}_imagen.jpg`, loading: false })
+          return
+        }
+      } catch {}
+
+      // Check video
+      try {
+        const vidRes = await fetch(`/media/videos/elecciones_2024/${adId}_video.mp4`, { method: 'HEAD' })
+        const vidType = vidRes.headers.get('Content-Type') || ''
+        if (!cancelled && vidRes.ok && vidType.startsWith('video/')) {
+          setMedia({
+            type: 'video',
+            src: `/media/videos/elecciones_2024/${adId}_video.mp4`,
+            poster: `/media/videos/elecciones_2024/${adId}_portada.jpg`,
+            loading: false,
+          })
+          return
+        }
+      } catch {}
+
+      if (!cancelled) setMedia({ type: null, loading: false })
+    }
+
+    detect()
+    return () => { cancelled = true }
+  }, [adId])
+
+  return media
+}
+
 function AdDetail({ row, layoutId, onClose }) {
   const ref = useRef(null)
   useClickOutside(ref, onClose)
@@ -71,6 +114,7 @@ function AdDetail({ row, layoutId, onClose }) {
   const metaUrl    = `https://www.facebook.com/ads/library/?id=${row.id}`
   const fechas     = [row.ad_delivery_start_time, row.ad_delivery_stop_time].filter(Boolean).join(' → ')
   const tipologias = getTipologias(row)
+  const media      = useAdMedia(row.id)
 
   return (
     <>
@@ -190,6 +234,36 @@ function AdDetail({ row, layoutId, onClose }) {
               </p>
             </div>
           </motion.div>
+
+          {/* Media (imagen o video) */}
+          {!media.loading && media.type && (
+            <motion.div
+              className="px-6 py-4 border-b border-gray-100"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                {media.type === 'video' ? <Play className="size-3" /> : <Image className="size-3" />}
+                {media.type === 'video' ? 'Video del anuncio' : 'Imagen del anuncio'}
+              </p>
+              {media.type === 'image' ? (
+                <img
+                  src={media.src}
+                  alt={`Anuncio ${row.id}`}
+                  className="w-full max-h-80 object-contain rounded bg-gray-50"
+                />
+              ) : (
+                <video
+                  src={media.src}
+                  poster={media.poster}
+                  controls
+                  className="w-full max-h-80 rounded bg-black"
+                  preload="metadata"
+                />
+              )}
+            </motion.div>
+          )}
 
           {/* Tipología */}
           <motion.div
@@ -365,7 +439,10 @@ export default function DataTable({ data }) {
 
   const hasFilters = search.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
 
-  const openDetail = (row) => setSelected({ row, layoutId: `ad-expand-${row.id}` })
+  const openDetail = (row) => {
+    console.log('openDetail called for row:', row.id, row.page_name)
+    setSelected({ row, layoutId: `ad-expand-${row.id}` })
+  }
   const closeDetail = () => setSelected(null)
 
   return (

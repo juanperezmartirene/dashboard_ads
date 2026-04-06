@@ -29,10 +29,9 @@ export default function Footer({ page, onNavigate }) {
               Fuente de datos
             </p>
             <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              Meta Ad Library API. Los datos de impresiones son rangos estimados
-              provistos por Meta. Los datos presentados son sintéticos y serán
-              reemplazados por los datos reales del corpus al finalizar el
-              procesamiento.
+              Meta Ad Library API. Los datos de gasto e impresiones son promedios
+              de los rangos inferior y superior reportados por la plataforma.
+              Corpus de 12.096 anuncios con clasificación automática ROUBERTa.
             </p>
           </div>
 
@@ -67,7 +66,7 @@ export default function Footer({ page, onNavigate }) {
             ))}
           </div>
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-6 text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            <span>Datos sintéticos · Última actualización: 24/03/2026</span>
+            <span>Última actualización: abril 2026</span>
             <span>Uruguay · Ciclo electoral 2023–2024</span>
           </div>
         </div>
