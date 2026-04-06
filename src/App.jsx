@@ -721,9 +721,17 @@ export default function App() {
       fetch('/data/realData.json').then(r => r.json()),
       fetch('/data/clasificacion.json').then(r => r.json()).catch(() => ({})),
     ]).then(([raw, clasif]) => {
-      setTableData(mergeClasificacion(processData(raw), clasif))
+      console.log('[DATA] raw:', raw?.length, 'clasif keys:', Object.keys(clasif).length)
+      const processed = processData(raw)
+      console.log('[DATA] processed:', processed?.length)
+      const merged = mergeClasificacion(processed, clasif)
+      console.log('[DATA] merged:', merged?.length)
+      setTableData(merged)
       setLoadingData(false)
-    }).catch(() => setLoadingData(false))
+    }).catch(err => {
+      console.error('[DATA] Error cargando datos:', err)
+      setLoadingData(false)
+    })
   }, [])
 
   // ── Filtrado de tabla ──
