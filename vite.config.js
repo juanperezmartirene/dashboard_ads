@@ -37,10 +37,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-d3': ['d3'],
-          'vendor-motion': ['motion'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react'
+          }
+          if (id.includes('node_modules/d3') || id.includes('node_modules/d3-')) {
+            return 'vendor-d3'
+          }
+          if (id.includes('node_modules/motion') || id.includes('node_modules/framer-motion')) {
+            return 'vendor-motion'
+          }
+          if (id.includes('node_modules/recharts')) {
+            return 'vendor-recharts'
+          }
         },
       },
     },
