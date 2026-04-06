@@ -556,7 +556,7 @@ export default function DataTable({ data }) {
                     onClick={() => openDetail(row)}
                   >
                     {/* Página */}
-                    <TableCell className="text-sm font-medium text-gray-700 max-w-[160px]">
+                    <TableCell className="text-sm font-medium text-gray-700 w-[160px] max-w-0 overflow-hidden">
                       <span className="block truncate">{row.page_name || '—'}</span>
                     </TableCell>
 
@@ -571,7 +571,7 @@ export default function DataTable({ data }) {
                     </TableCell>
 
                     {/* Texto */}
-                    <TableCell className="text-sm text-gray-500 max-w-[220px]">
+                    <TableCell className="text-sm text-gray-500 w-[220px] max-w-0 overflow-hidden">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span className="block truncate cursor-default">
