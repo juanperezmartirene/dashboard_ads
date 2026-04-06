@@ -1,17 +1,17 @@
 import { useState, useMemo, useEffect } from 'react'
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip as RechartTooltip,
+  ResponsiveContainer, Cell,
+} from 'recharts'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
 import DepartmentChart from './components/DepartmentChart'
 import DataTable from './components/DataTable'
 import Footer from './components/Footer'
-import InternasTable from './components/InternasTable'
-import NacionalesBar from './components/NacionalesBar'
-import TopCuentas from './components/TopCuentas'
 import {
   processData, mergeClasificacion,
-  computeGastoMeta, computeGastoPartido,
-  computeInternasCandidatos, computeNacionalesPartidos,
-  computeTopCuentas, computeDeptDistribution, computeKPIs,
+  computeDeptDistribution,
   computeFilteredStats,
   computeTiposTotales, computeCombinaciones, computeTiposPorEtapa,
   computeTiposPorPartido, computeGastoImpPorTipo, computeTiposPorTerritorio,
@@ -64,56 +64,141 @@ function ChartBox({ title, sub, children, gray }) {
 
 // ─── HOME PAGE ────────────────────────────────────────────────────────────────
 
+// Número animado con spring (motion.dev) — interpola desde el valor anterior
+function AnimatedNumber({ value, format = v => Math.round(v).toLocaleString('es-UY') }) {
+  const motionVal = useMotionValue(value)
+  const spring    = useSpring(motionVal, { stiffness: 60, damping: 18 })
+  const [display, setDisplay] = useState(() => format(value))
+
+  useEffect(() => { motionVal.set(value) }, [value, motionVal])
+  useEffect(() => spring.on('change', v => setDisplay(format(v))), [spring, format])
+
+  return <span>{display}</span>
+}
+
+const KPI_ACCENTS = ['#173363', '#0096D1', '#10B981', '#6366F1', '#D97706']
+
 function HomeKPIs({ stats }) {
-  const accents = ['#173363', '#0096D1', '#10B981', '#6366F1', '#D97706']
   const items = [
-    { label: 'Anuncios', value: stats.totalAnuncios.toLocaleString('es-UY') },
-    { label: 'Gasto estimado', value: `U$S ${stats.totalGasto.toLocaleString('es-UY')}` },
-    { label: 'Impresiones est.', value: stats.totalImp > 1e6 ? `${(stats.totalImp / 1e6).toFixed(1)} M` : stats.totalImp.toLocaleString('es-UY') },
-    { label: 'Cuentas', value: stats.cuentas.toLocaleString('es-UY') },
-    { label: 'Imp. por dólar', value: stats.impDolar.toLocaleString('es-UY') },
+    {
+      label: 'Anuncios',
+      value: stats.totalAnuncios,
+      format: v => Math.round(v).toLocaleString('es-UY'),
+    },
+    {
+      label: 'Gasto estimado',
+      value: stats.totalGasto,
+      format: v => `U$S ${Math.round(v).toLocaleString('es-UY')}`,
+    },
+    {
+      label: 'Impresiones est.',
+      value: stats.totalImp,
+      format: v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : Math.round(v).toLocaleString('es-UY'),
+    },
+    {
+      label: 'Cuentas',
+      value: stats.cuentas,
+      format: v => Math.round(v).toLocaleString('es-UY'),
+    },
+    {
+      label: 'Imp. por dólar',
+      value: stats.impDolar,
+      format: v => Math.round(v).toLocaleString('es-UY'),
+    },
   ]
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
+    <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
       {items.map((k, i) => (
-        <div
+        <motion.div
           key={k.label}
+          layout
           className="bg-white border border-gray-200 rounded-sm px-4 py-3"
-          style={{ borderTop: `3px solid ${accents[i]}` }}
+          style={{ borderTop: `3px solid ${KPI_ACCENTS[i]}` }}
         >
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1 leading-snug">{k.label}</p>
-          <p className="font-mono font-bold text-gray-900 leading-none truncate" style={{ fontSize: '1.1rem' }}>{k.value}</p>
-        </div>
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1 leading-snug">
+            {k.label}
+          </p>
+          <p className="font-mono font-bold text-gray-900 leading-none truncate" style={{ fontSize: '1.1rem' }}>
+            <AnimatedNumber value={k.value} format={k.format} />
+          </p>
+        </motion.div>
       ))}
+    </motion.div>
+  )
+}
+
+function PartyTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
+  return (
+    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg space-y-0.5">
+      <p className="font-semibold mb-1">{d.partido}</p>
+      <p>Anuncios: {d.anuncios.toLocaleString('es-UY')}</p>
+      <p>Gasto est.: U$S {d.gasto.toLocaleString('es-UY')}</p>
+      <p>Impresiones: {d.impresiones > 1e6 ? (d.impresiones / 1e6).toFixed(1) + ' M' : d.impresiones.toLocaleString('es-UY')}</p>
+      <p>{d.imp_dolar.toLocaleString('es-UY')} imp/U$S · {d.cuentas} cuentas</p>
     </div>
   )
 }
 
-function HomePartyTable({ stats }) {
-  const maxAds = Math.max(...stats.byParty.map(p => p.anuncios), 1)
+function HomePartyChart({ stats }) {
+  // Solo mostrar partidos con anuncios > 0 (los no seleccionados quedan excluidos)
+  const data = stats.byParty.filter(p => p.anuncios > 0)
+
+  if (data.length === 0) {
+    return (
+      <p className="text-xs text-gray-400 italic py-4">
+        Sin anuncios con los filtros actuales.
+      </p>
+    )
+  }
+
+  const chartHeight = Math.max(80, data.length * 48)
+
   return (
-    <div className="space-y-2.5">
-      {stats.byParty.map(p => (
-        <div key={p.partido}>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 w-28 shrink-0 truncate">{p.partido}</span>
-            <div className="flex-1 bg-gray-100 rounded-sm h-6 relative overflow-hidden">
-              <div
-                className="h-full rounded-sm"
-                style={{ width: `${(p.anuncios / maxAds) * 100}%`, backgroundColor: p.color, opacity: 0.8 }}
-              />
-            </div>
-            <span className="text-xs font-mono text-gray-600 w-16 text-right">{p.anuncios.toLocaleString('es-UY')}</span>
-          </div>
-          <div className="flex gap-4 ml-[7.5rem] mt-0.5">
-            <span className="text-xs text-gray-400">U$S {p.gasto.toLocaleString('es-UY')}</span>
-            <span className="text-xs text-gray-400">{p.impresiones > 1e6 ? (p.impresiones / 1e6).toFixed(1) + ' M imp.' : p.impresiones.toLocaleString('es-UY') + ' imp.'}</span>
-            <span className="text-xs text-gray-400">{p.imp_dolar.toLocaleString('es-UY')} imp/U$S</span>
-            <span className="text-xs text-gray-400">{p.cuentas} cuentas</span>
-          </div>
-        </div>
-      ))}
-    </div>
+    <ResponsiveContainer width="100%" height={chartHeight}>
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 4, right: 56, bottom: 4, left: 0 }}
+      >
+        <XAxis
+          type="number"
+          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+          tickFormatter={v => v.toLocaleString('es-UY')}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          type="category"
+          dataKey="short"
+          tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }}
+          width={42}
+          axisLine={false}
+          tickLine={false}
+        />
+        <RechartTooltip
+          content={<PartyTooltip />}
+          cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+        />
+        <Bar
+          dataKey="anuncios"
+          radius={[0, 3, 3, 0]}
+          isAnimationActive
+          animationDuration={450}
+          animationEasing="ease-out"
+          label={{
+            position: 'right',
+            formatter: v => v.toLocaleString('es-UY'),
+            style: { fontSize: 11, fill: '#6B7280' },
+          }}
+        >
+          {data.map(p => (
+            <Cell key={p.partido} fill={p.color} fillOpacity={0.82} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   )
 }
 
@@ -155,36 +240,55 @@ function HomeResumen({ deptData, filteredStats, hasFilters }) {
         <h2 className="text-2xl font-semibold text-gray-900">
           Los datos, de un vistazo
         </h2>
+        <AnimatePresence mode="wait">
+          {hasFilters && (
+            <motion.p
+              key="filtros-activos"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="text-xs text-blue-500 font-medium sm:max-w-xs sm:text-right"
+            >
+              Filtros activos
+            </motion.p>
+          )}
+        </AnimatePresence>
         <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
-          {hasFilters ? 'Filtros activos · ' : ''}Datos de Meta Ad Library · Oct 2023 – Nov 2024
+          Datos de Meta Ad Library · Oct 2023 – Nov 2024
         </p>
       </div>
 
       <HomeKPIs stats={filteredStats} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <ChartBox
-          title="Anuncios por partido"
-          sub="Total de anuncios, gasto, impresiones e impresiones por dólar por partido."
-        >
-          <HomePartyTable stats={filteredStats} />
-        </ChartBox>
+      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <motion.div layout>
+          <ChartBox
+            title="Anuncios por partido"
+            sub="Solo partidos con anuncios según los filtros activos."
+          >
+            <HomePartyChart stats={filteredStats} />
+          </ChartBox>
+        </motion.div>
 
-        <ChartBox
-          id="territorial"
-          title="Impresiones por departamento"
-          sub="Impresiones estimadas por departamento. Solo anuncios con alcance departamental."
-        >
-          <DepartmentChart data={deptData} />
-        </ChartBox>
-      </div>
+        <motion.div layout id="territorial">
+          <ChartBox
+            title="Impresiones por departamento"
+            sub="Impresiones estimadas por departamento. Solo anuncios con alcance departamental."
+          >
+            <DepartmentChart data={deptData} />
+          </ChartBox>
+        </motion.div>
+      </motion.div>
 
-      <ChartBox
-        title="Top 5 cuentas por anuncios, gasto e impresiones"
-        sub="Ranking de las principales cuentas anunciantes según los filtros activos."
-      >
-        <HomeTop5 top5={filteredStats.top5} />
-      </ChartBox>
+      <motion.div layout>
+        <ChartBox
+          title="Top 5 cuentas por anuncios, gasto e impresiones"
+          sub="Ranking de las principales cuentas anunciantes según los filtros activos."
+        >
+          <HomeTop5 top5={filteredStats.top5} />
+        </ChartBox>
+      </motion.div>
     </Section>
   )
 }
@@ -602,213 +706,6 @@ function PageEquipo() {
   )
 }
 
-// ─── GASTOS PAGE ──────────────────────────────────────────────────────────────
-
-function GastoHallazgos({ gastoPartido }) {
-  const total = gastoPartido.reduce((s, p) => s + p.anuncios, 0)
-  const topPartido = gastoPartido[0] || {}
-  const topEficiencia = [...gastoPartido].sort((a, b) => {
-    const ea = a.gasto_total > 0 ? a.imp_total / a.gasto_total : 0
-    const eb = b.gasto_total > 0 ? b.imp_total / b.gasto_total : 0
-    return eb - ea
-  })[0] || {}
-  const eficiencia = topEficiencia.gasto_total > 0 ? Math.round(topEficiencia.imp_total / topEficiencia.gasto_total) : 0
-
-  const hallazgos = [
-    {
-      titulo: 'Concentración partidaria',
-      texto: `Los tres principales partidos (PN, FA, PC) acumulan ${total.toLocaleString('es-UY')} anuncios. ${topPartido.partido || ''} lidera con ${topPartido.anuncios?.toLocaleString('es-UY') || 0} anuncios.`,
-    },
-    {
-      titulo: 'Gasto total estimado en Meta',
-      texto: `El gasto acumulado en Meta asciende a U$S ${gastoPartido.reduce((s, p) => s + p.gasto_total, 0).toLocaleString('es-UY')} (promedio de rangos reportados por la plataforma).`,
-    },
-    {
-      titulo: 'Eficiencia publicitaria',
-      texto: `${topEficiencia.partido || ''} obtiene la mayor eficiencia con ${eficiencia.toLocaleString('es-UY')} impresiones por dólar invertido.`,
-    },
-    {
-      titulo: 'Distribución internas/nacionales',
-      texto: `Internas: ${gastoPartido.reduce((s, p) => s + p.anuncios_internas, 0).toLocaleString('es-UY')} anuncios. Nacionales: ${gastoPartido.reduce((s, p) => s + p.anuncios_nacionales, 0).toLocaleString('es-UY')} anuncios.`,
-    },
-  ]
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-      {hallazgos.map((h, i) => (
-        <div key={i} className="bg-white border border-gray-200 rounded-sm p-5">
-          <p className="text-sm font-semibold text-gray-800 mb-1">{h.titulo}</p>
-          <p className="text-xs text-gray-500 leading-relaxed">{h.texto}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function GastoKPIs({ kpis }) {
-  const accents = ['#173363', '#0096D1', '#10B981', '#6366F1']
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-      {kpis.map((k, i) => (
-        <div
-          key={k.label}
-          className="bg-white border border-gray-200 rounded-sm px-4 py-4 md:px-6 md:py-5"
-          style={{ borderTop: `3px solid ${accents[i]}` }}
-        >
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-2 leading-snug">{k.label}</p>
-          <p className="font-mono font-bold text-gray-900 leading-none mb-2 truncate" style={{ fontSize: '1.35rem' }}>{k.value}</p>
-          <p className="text-xs text-gray-400 leading-snug">{k.sub}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function PageGastos({ kpis, gastoPartido, internasCandidatos, nacionalesPartidos, topCuentas, loadingData }) {
-  if (loadingData) {
-    return (
-      <Section>
-        <div className="flex items-center justify-center py-16 gap-3">
-          <div className="w-5 h-5 rounded-full border-2 border-gray-200 animate-spin" style={{ borderTopColor: '#0096D1' }} />
-          <span className="text-sm text-gray-400">Cargando datos...</span>
-        </div>
-      </Section>
-    )
-  }
-
-  return (
-    <>
-      {/* ── Sección 1: Contexto del gasto ── */}
-      <Section id="gasto-contexto" gray>
-        <SectionMeta num={1} label="El gasto en contexto" />
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            ¿Cuánto y cómo gastan los partidos en Meta?
-          </h2>
-          <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
-            Datos computados del corpus · {kpis[0]?.value || ''} anuncios
-          </p>
-        </div>
-
-        <GastoHallazgos gastoPartido={gastoPartido} />
-        <GastoKPIs kpis={kpis} />
-
-        <ChartBox
-          title="Gasto estimado en Meta por partido"
-          sub="Gasto promedio estimado acumulado (internas + nacionales). Basado en rangos reportados por Meta."
-        >
-          <div className="space-y-4 py-2">
-            {gastoPartido.map(p => (
-              <div key={p.partido}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{p.partido}</span>
-                  <span className="text-sm font-mono text-gray-600">U$S {p.gasto_total.toLocaleString('es-UY')}</span>
-                </div>
-                <div className="flex gap-1 h-5">
-                  <div
-                    className="rounded-sm h-full"
-                    style={{
-                      width: `${(p.gasto_internas / Math.max(...gastoPartido.map(x => x.gasto_total))) * 100}%`,
-                      backgroundColor: p.color,
-                      opacity: 0.5,
-                    }}
-                    title={`Internas: U$S ${p.gasto_internas.toLocaleString('es-UY')}`}
-                  />
-                  <div
-                    className="rounded-sm h-full"
-                    style={{
-                      width: `${(p.gasto_nacionales / Math.max(...gastoPartido.map(x => x.gasto_total))) * 100}%`,
-                      backgroundColor: p.color,
-                      opacity: 0.85,
-                    }}
-                    title={`Nacionales: U$S ${p.gasto_nacionales.toLocaleString('es-UY')}`}
-                  />
-                </div>
-                <div className="flex gap-3 mt-0.5">
-                  <span className="text-xs text-gray-400">Internas: U$S {p.gasto_internas.toLocaleString('es-UY')}</span>
-                  <span className="text-xs text-gray-400">Nacionales: U$S {p.gasto_nacionales.toLocaleString('es-UY')}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ChartBox>
-      </Section>
-
-      {/* ── Sección 2: Elecciones internas ── */}
-      <Section id="gasto-internas">
-        <SectionMeta num={2} label="Elecciones internas" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              La publicidad en las internas
-            </h2>
-            <Prose narrow>
-              Durante las elecciones internas (oct. 2023 – jun. 2024) cada partido desplegó
-              estrategias diferenciadas. La tabla muestra el desglose de anuncios, impresiones
-              estimadas y gasto por precandidato, basado en los promedios de rangos reportados por Meta.
-            </Prose>
-          </div>
-          <div>
-            <Prose>
-              Los datos reflejan la actividad registrada en la Meta Ad Library. Las impresiones
-              y gastos son promedios de los rangos inferior y superior reportados por la plataforma.
-              Hacé clic en las columnas para ordenar.
-            </Prose>
-          </div>
-        </div>
-
-        <ChartBox
-          title="Anuncios, impresiones y gasto por precandidato — elecciones internas 2024"
-          sub="Hacé clic en el encabezado de cada columna para ordenar. Las barras muestran el valor relativo dentro del corpus."
-          gray
-        >
-          <InternasTable data={internasCandidatos} />
-        </ChartBox>
-      </Section>
-
-      {/* ── Sección 3: Elecciones nacionales ── */}
-      <Section id="gasto-nacionales" gray>
-        <SectionMeta num={3} label="Elecciones nacionales" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-8">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Partidos en la primera vuelta
-            </h2>
-            <Prose narrow>
-              En la primera vuelta (jul.–oct. 2024) se analizaron los anuncios publicados por
-              los principales partidos. La comparación muestra volumen de anuncios, impresiones
-              estimadas y gasto promedio, permitiendo evaluar la eficiencia publicitaria de cada partido.
-            </Prose>
-          </div>
-          <div>
-            <Prose>
-              Las métricas de impresiones por dólar permiten comparar la eficiencia del gasto
-              publicitario entre partidos. Los valores se basan en los promedios de rangos
-              reportados por Meta.
-            </Prose>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ChartBox
-            title="Resultados por partido — elecciones nacionales"
-            sub="Seleccioná la métrica para comparar partidos. Primera vuelta, jul.–oct. 2024."
-          >
-            <NacionalesBar data={nacionalesPartidos} />
-          </ChartBox>
-
-          <ChartBox
-            title="Top 5 cuentas por anuncios, gasto e impresiones"
-            sub="Elecciones nacionales (primera vuelta). Las impresiones son promedios de rangos reportados por Meta."
-          >
-            <TopCuentas data={topCuentas} />
-          </ChartBox>
-        </div>
-      </Section>
-    </>
-  )
-}
-
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -848,24 +745,17 @@ export default function App() {
     return rows
   }, [tableData, selectedParties, selectedEtapa, selectedTerritorio])
 
-  // ── Datos computados desde datos reales ──
-  // ── Datos de tipos de anuncios ──
-  const tiposTotales     = useMemo(() => computeTiposTotales(tableData),     [tableData])
-  const combinaciones    = useMemo(() => computeCombinaciones(tableData),    [tableData])
-  const tiposPorEtapa    = useMemo(() => computeTiposPorEtapa(tableData),    [tableData])
-  const tiposPorPartido  = useMemo(() => computeTiposPorPartido(tableData),  [tableData])
-  const gastoImpPorTipo  = useMemo(() => computeGastoImpPorTipo(tableData),  [tableData])
+  // ── Datos de clasificación ──
+  const tiposTotales     = useMemo(() => computeTiposTotales(tableData),       [tableData])
+  const combinaciones    = useMemo(() => computeCombinaciones(tableData),      [tableData])
+  const tiposPorEtapa    = useMemo(() => computeTiposPorEtapa(tableData),      [tableData])
+  const tiposPorPartido  = useMemo(() => computeTiposPorPartido(tableData),    [tableData])
+  const gastoImpPorTipo  = useMemo(() => computeGastoImpPorTipo(tableData),    [tableData])
   const tiposPorTerr     = useMemo(() => computeTiposPorTerritorio(tableData), [tableData])
-  const serieTemporal    = useMemo(() => computeSerieTemporal(tableData),    [tableData])
+  const serieTemporal    = useMemo(() => computeSerieTemporal(tableData),      [tableData])
 
-  const gastoMeta = useMemo(() => computeGastoMeta(tableData), [tableData])
-  const gastoPartido = useMemo(() => computeGastoPartido(tableData), [tableData])
-  const internasCandidatos = useMemo(() => computeInternasCandidatos(tableData), [tableData])
-  const nacionalesPartidos = useMemo(() => computeNacionalesPartidos(tableData), [tableData])
-  const topCuentas = useMemo(() => computeTopCuentas(tableData), [tableData])
-  const deptData = useMemo(() => computeDeptDistribution(filteredTable), [filteredTable])
-  const kpis = useMemo(() => computeKPIs(tableData, gastoMeta), [tableData, gastoMeta])
-  const filteredStats = useMemo(() => computeFilteredStats(filteredTable), [filteredTable])
+  const deptData      = useMemo(() => computeDeptDistribution(filteredTable), [filteredTable])
+  const filteredStats = useMemo(() => computeFilteredStats(filteredTable),    [filteredTable])
 
   const navigate = (target) => {
     setPage(target)
@@ -889,7 +779,7 @@ export default function App() {
       )}
       {page === 'metodologia' && <PageMetodologia />}
       {page === 'equipo'      && <PageEquipo />}
-      {page === 'tipos' && (
+      {page === 'clasificacion' && (
         <PageTipos
           tiposTotales={tiposTotales}
           combinaciones={combinaciones}
@@ -898,16 +788,6 @@ export default function App() {
           gastoImpPorTipo={gastoImpPorTipo}
           tiposPorTerritorio={tiposPorTerr}
           serieTemporal={serieTemporal}
-          loadingData={loadingData}
-        />
-      )}
-      {page === 'gastos' && (
-        <PageGastos
-          kpis={kpis}
-          gastoPartido={gastoPartido}
-          internasCandidatos={internasCandidatos}
-          nacionalesPartidos={nacionalesPartidos}
-          topCuentas={topCuentas}
           loadingData={loadingData}
         />
       )}

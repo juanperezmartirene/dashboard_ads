@@ -1,42 +1,34 @@
 import { useState } from 'react'
 import { BookOpenIcon } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 
 const PAGE_LINKS = [
-  { id: 'home',        label: 'Inicio'       },
-  { id: 'gastos',      label: 'Gastos'       },
-  { id: 'tipos',       label: 'Tipos'        },
-  { id: 'metodologia', label: 'Metodología'  },
-  { id: 'equipo',      label: 'Equipo'       },
+  { id: 'home',          label: 'Inicio'         },
+  { id: 'clasificacion', label: 'Clasificación'   },
+  { id: 'metodologia',   label: 'Metodología'     },
+  { id: 'equipo',        label: 'Equipo'          },
 ]
 
 const HOME_SECTIONS = [
   { href: '#resultados', label: 'Resultados'  },
-  { href: '#temporal',   label: 'Evolución'   },
   { href: '#partidos',   label: 'Por partido' },
   { href: '#territorial',label: 'Territorio'  },
   { href: '#datos',      label: 'Datos'       },
 ]
 
-const GASTOS_SECTIONS = [
-  { href: '#gasto-contexto',   label: 'Contexto'  },
-  { href: '#gasto-internas',   label: 'Internas'  },
-  { href: '#gasto-nacionales', label: 'Nacionales' },
-]
-
-const TIPOS_SECTIONS = [
-  { href: '#tipos-intro',        label: 'Clasificación' },
-  { href: '#tipos-totales',      label: 'Distribución'  },
-  { href: '#tipos-temporal',     label: 'Evolución'     },
-  { href: '#tipos-etapa-partido',label: 'Etapa/Partido' },
-  { href: '#tipos-gasto-imp',    label: 'Gasto'         },
+const CLASIF_SECTIONS = [
+  { href: '#clasif-intro',        label: 'Clasificación' },
+  { href: '#clasif-totales',      label: 'Distribución'  },
+  { href: '#clasif-temporal',     label: 'Evolución'     },
+  { href: '#clasif-etapa-partido',label: 'Etapa/Partido' },
+  { href: '#clasif-gasto-imp',    label: 'Impacto'       },
 ]
 
 const METOD_SECTIONS = [
-  { href: '#estudio',   label: 'El estudio' },
-  { href: '#tipologia', label: 'Tipología'  },
-  { href: '#corpus',    label: 'El corpus'  },
+  { href: '#estudio',    label: 'El estudio' },
+  { href: '#tipologia',  label: 'Clasificación' },
+  { href: '#corpus',     label: 'El corpus'  },
 ]
 
 const PAGE_HEROES = {
@@ -44,14 +36,9 @@ const PAGE_HEROES = {
     title: 'Publicidad política digital en Meta durante las elecciones uruguayas 2024',
     sub: 'Análisis de 12.096 anuncios publicados por los principales partidos políticos en Facebook e Instagram a lo largo de tres etapas electorales.',
   },
-  gastos: {
-    title: 'Gasto y estrategias de publicidad en Meta · Uruguay 2024',
-    sub: 'Análisis de 12.976 anuncios de las elecciones internas y la primera vuelta nacional. Gasto, impresiones y segmentación por partido y candidato.',
-  },
-  tipos: {
-    title: 'Tipos de anuncios · Clasificación con ROUBERTa',
-    sub: `Clasificación de 12.096 anuncios en seis categorías funcionales mediante aprendizaje automático supervisado.
-    Distribución por etapa electoral, partido político y alcance territorial.`,
+  clasificacion: {
+    title: 'Clasificación de anuncios · ROUBERTa',
+    sub: 'Clasificación de 12.096 anuncios en seis categorías funcionales mediante aprendizaje automático supervisado. Distribución por etapa electoral, partido político y alcance territorial.',
   },
   metodologia: {
     title: 'Metodología',
@@ -66,10 +53,9 @@ const PAGE_HEROES = {
 export default function Header({ page, onNavigate }) {
   const [open, setOpen] = useState(false)
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
-  const sections = page === 'home' ? HOME_SECTIONS
-    : page === 'gastos'      ? GASTOS_SECTIONS
-    : page === 'tipos'       ? TIPOS_SECTIONS
-    : page === 'metodologia' ? METOD_SECTIONS
+  const sections = page === 'home'          ? HOME_SECTIONS
+    : page === 'clasificacion' ? CLASIF_SECTIONS
+    : page === 'metodologia'   ? METOD_SECTIONS
     : []
 
   return (
@@ -130,7 +116,7 @@ export default function Header({ page, onNavigate }) {
         </nav>
       </div>
 
-      {/* Mobile Sheet (drawer izquierdo) */}
+      {/* Mobile Sheet */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="left"

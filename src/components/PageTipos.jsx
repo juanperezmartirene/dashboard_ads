@@ -363,7 +363,7 @@ export default function PageTipos({
   return (
     <>
       {/* ── Sección 1: Clasificación y metodología ── */}
-      <Section id="tipos-intro" gray>
+      <Section id="clasif-intro" gray>
         <SectionMeta num={1} label="Clasificación de anuncios" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-10">
           <div>
@@ -425,7 +425,7 @@ export default function PageTipos({
       </Section>
 
       {/* ── Sección 2: Resultados generales ── */}
-      <Section id="tipos-totales">
+      <Section id="clasif-totales">
         <SectionMeta num={2} label="Distribución general" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
           <h2 className="text-2xl font-semibold text-gray-900">
@@ -458,7 +458,7 @@ export default function PageTipos({
       </Section>
 
       {/* ── Sección 3: Evolución temporal ── */}
-      <Section id="tipos-temporal" gray>
+      <Section id="clasif-temporal" gray>
         <SectionMeta num={3} label="Evolución temporal" />
         <div className="mb-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">
@@ -484,7 +484,7 @@ export default function PageTipos({
       </Section>
 
       {/* ── Sección 4: Por etapa y partido ── */}
-      <Section id="tipos-etapa-partido">
+      <Section id="clasif-etapa-partido">
         <SectionMeta num={4} label="Por etapa y partido" />
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">
           ¿Cambia la estrategia según la etapa o el partido?
@@ -529,7 +529,7 @@ export default function PageTipos({
       </Section>
 
       {/* ── Sección 5: Gasto e impresiones ── */}
-      <Section id="tipos-gasto-imp" gray>
+      <Section id="clasif-gasto-imp" gray>
         <SectionMeta num={5} label="Gasto e impresiones por tipo" />
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
           <div>

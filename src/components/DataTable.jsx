@@ -53,15 +53,12 @@ const PARTIDOS = ['Todos', 'Frente Amplio', 'Partido Nacional', 'Partido Colorad
 const ETAPAS   = ['Todas', 'Internas', 'Nacionales', 'Ballottage']
 
 const COLS = [
-  { key: 'page_name',             label: 'Página',        sortable: true,  width: 'max-w-[160px]' },
-  { key: 'part_org',              label: 'Partido',       sortable: true  },
-  { key: 'text_body',             label: 'Texto',         sortable: false, width: 'max-w-[220px]' },
-  { key: 'etapa',                 label: 'Tipo elección', sortable: true  },
-  { key: 'departamento_nacional', label: 'Alcance',       sortable: true  },
-  { key: 'promedio_gasto',        label: 'Gasto prom.',   sortable: true  },
-  { key: 'promedio_impresiones',  label: 'Imp. prom.',    sortable: true  },
-  { key: '_tipologia',            label: 'Tipología',     sortable: false },
-  { key: '_expand',               label: '',              sortable: false },
+  { key: 'page_name',             label: 'Página',          sortable: true,  width: 'w-56 min-w-[14rem]' },
+  { key: 'part_org',              label: 'Partido',         sortable: true,  width: 'w-28 min-w-[7rem]'  },
+  { key: 'etapa',                 label: 'Tipo elección',   sortable: true  },
+  { key: 'departamento_nacional', label: 'Alcance',         sortable: true  },
+  { key: '_tipologia',            label: 'Clasificación',   sortable: false },
+  { key: '_expand',               label: '',                sortable: false },
 ]
 
 const PAGE_SIZE = 20
@@ -282,7 +279,7 @@ function AdDetail({ row, layoutId, onClose }) {
             </motion.div>
           )}
 
-          {/* Tipología */}
+          {/* Clasificación */}
           <motion.div
             className="px-6 py-3 border-b border-gray-100"
             initial={{ opacity: 0 }}
@@ -290,7 +287,7 @@ function AdDetail({ row, layoutId, onClose }) {
             transition={{ delay: 0.22 }}
           >
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-              <Tag className="size-3" /> Tipología (ROUBERTa)
+              <Tag className="size-3" /> Clasificación (ROUBERTa)
             </p>
             {tipologias.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
@@ -395,7 +392,7 @@ function AdDetail({ row, layoutId, onClose }) {
 // ── Tabla principal ───────────────────────────────────────────────────────────
 
 export default function DataTable({ data }) {
-  const [sort,        setSort]        = useState({ key: 'promedio_gasto', dir: 'desc' })
+  const [sort,        setSort]        = useState({ key: 'page_name', dir: 'asc' })
   const [search,      setSearch]      = useState('')
   const [partido,     setPartido]     = useState('Todos')
   const [etapaFilter, setEtapaFilter] = useState('Todas')
@@ -451,7 +448,7 @@ export default function DataTable({ data }) {
 
   const reset = () => {
     setSearch(''); setPartido('Todos'); setEtapaFilter('Todas')
-    setSort({ key: 'promedio_gasto', dir: 'desc' }); setPage(0)
+    setSort({ key: 'page_name', dir: 'asc' }); setPage(0)
   }
 
   const hasFilters = search.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
@@ -570,22 +567,6 @@ export default function DataTable({ data }) {
                       </span>
                     </TableCell>
 
-                    {/* Texto */}
-                    <TableCell className="text-sm text-gray-500 w-[220px] max-w-0 overflow-hidden">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="block truncate cursor-default">
-                            {row.text_body || row.texto_anuncio_completo || '—'}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="max-w-sm text-xs">
-                          <p className="line-clamp-4 whitespace-pre-line">
-                            {row.text_body || row.texto_anuncio_completo || '—'}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TableCell>
-
                     {/* Tipo de elección */}
                     <TableCell>
                       {row.etapa && etapaBdg ? (
@@ -607,21 +588,7 @@ export default function DataTable({ data }) {
                       {row.departamento_nacional || '—'}
                     </TableCell>
 
-                    {/* Gasto promedio */}
-                    <TableCell className="text-sm text-gray-600 whitespace-nowrap font-mono text-right">
-                      {row.promedio_gasto > 0
-                        ? `$${Math.round(row.promedio_gasto).toLocaleString('es-UY')}`
-                        : '—'}
-                    </TableCell>
-
-                    {/* Impresiones promedio */}
-                    <TableCell className="text-sm text-gray-600 whitespace-nowrap font-mono text-right">
-                      {row.promedio_impresiones > 0
-                        ? Math.round(row.promedio_impresiones).toLocaleString('es-UY')
-                        : '—'}
-                    </TableCell>
-
-                    {/* Tipología */}
+                    {/* Clasificación */}
                     <TableCell className="max-w-[180px]">
                       {tipologias.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
