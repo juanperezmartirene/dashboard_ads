@@ -79,8 +79,14 @@ function processRow(row) {
         : row.spend_lower
       : 0
 
+  // Derivar fecha "YYYY-MM" desde ad_delivery_start_time cuando fecha es null
+  const fecha = row.fecha || (row.ad_delivery_start_time
+    ? row.ad_delivery_start_time.slice(0, 7)
+    : null)
+
   return {
     ...row,
+    fecha,
     promedio_impresiones: imp,
     promedio_gasto: gasto,
     departamento_nacional: DEPTO_MAP[row.departamento_nacional] || row.departamento_nacional || 'Nacional',
