@@ -356,13 +356,13 @@ function AdDetail({ row, layoutId, onClose }) {
           </motion.div>
 
           {/* Distribución demográfica y regional */}
-          {adDetails && (adDetails.demo || adDetails.region) && (
-            <motion.div
-              className="px-6 py-4 border-b border-gray-100"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.24 }}
-            >
+          <motion.div
+            className="px-6 py-4 border-b border-gray-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.24 }}
+          >
+            {adDetails && (adDetails.demo || adDetails.region) ? (
               <div className={cn(
                 'grid gap-4',
                 adDetails.demo && adDetails.region ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
@@ -384,8 +384,15 @@ function AdDetail({ row, layoutId, onClose }) {
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                  <Users className="size-3" /> Distribución de impresiones
+                </p>
+                <p className="text-xs text-gray-300 italic">— Datos no disponibles para este anuncio</p>
+              </div>
+            )}
+          </motion.div>
 
           {/* Texto */}
           <motion.div
