@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartTooltip,
-  ResponsiveContainer, Cell, ReferenceLine,
+  ResponsiveContainer, Cell, ReferenceLine, Legend,
 } from 'recharts'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
@@ -167,7 +167,7 @@ function HomePartyChart({ stats }) {
       >
         <XAxis
           type="number"
-          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+          tick={{ fontSize: 12, fill: '#9CA3AF' }}
           tickFormatter={v => v.toLocaleString('es-UY')}
           axisLine={false}
           tickLine={false}
@@ -175,8 +175,8 @@ function HomePartyChart({ stats }) {
         <YAxis
           type="category"
           dataKey="short"
-          tick={{ fontSize: 12, fill: '#374151', fontWeight: 500 }}
-          width={42}
+          tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }}
+          width={120}
           axisLine={false}
           tickLine={false}
         />
@@ -193,7 +193,7 @@ function HomePartyChart({ stats }) {
           label={{
             position: 'right',
             formatter: v => v.toLocaleString('es-UY'),
-            style: { fontSize: 11, fill: '#6B7280' },
+            style: { fontSize: 12, fill: '#6B7280' },
           }}
         >
           {data.map(p => (
@@ -426,12 +426,25 @@ function fmtMes(fechaStr) {
   return `${meses[parseInt(mo, 10) - 1]} ${yr.slice(2)}`
 }
 
+const PARTY_LINES = [
+  { key: 'total',            label: 'Total',             color: '#0096D1', width: 2.5 },
+  { key: 'Partido Nacional', label: 'Partido Nacional',  color: '#0EA5E9', width: 1.5 },
+  { key: 'Frente Amplio',    label: 'Frente Amplio',     color: '#EAB308', width: 1.5 },
+  { key: 'Partido Colorado', label: 'Partido Colorado',  color: '#EF4444', width: 1.5 },
+  { key: 'Otros',            label: 'Otros',             color: '#6B7280', width: 1.5 },
+]
+
 function LineTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
+  const byKey = Object.fromEntries(payload.map(p => [p.dataKey, p.value]))
   return (
-    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg">
-      <p className="font-semibold mb-0.5">{fmtMes(label)}</p>
-      <p>{payload[0].value.toLocaleString('es-UY')} anuncios</p>
+    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg space-y-0.5">
+      <p className="font-semibold mb-1">{fmtMes(label)}</p>
+      {PARTY_LINES.map(pl => byKey[pl.key] != null && (
+        <p key={pl.key} style={{ color: pl.color }}>
+          {pl.label}: {byKey[pl.key].toLocaleString('es-UY')}
+        </p>
+      ))}
     </div>
   )
 }
@@ -441,23 +454,29 @@ function HomeLineChart({ data }) {
     return <p className="text-xs text-gray-400 italic py-4">Sin datos temporales con los filtros actuales.</p>
   }
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={260}>
       <LineChart data={data} margin={{ top: 16, right: 16, bottom: 4, left: 8 }}>
         <XAxis
           dataKey="fecha"
           tickFormatter={fmtMes}
-          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+          tick={{ fontSize: 12, fill: '#9CA3AF' }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+          tick={{ fontSize: 12, fill: '#9CA3AF' }}
           tickFormatter={v => v.toLocaleString('es-UY')}
           axisLine={false}
           tickLine={false}
           width={36}
         />
         <RechartTooltip content={<LineTooltip />} cursor={{ stroke: '#E5E7EB' }} />
+        <Legend
+          verticalAlign="bottom"
+          iconType="plainline"
+          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+          formatter={(value) => <span style={{ color: '#6B7280' }}>{value}</span>}
+        />
         {ELECTION_REFS.map(el => (
           <ReferenceLine
             key={el.fecha}
@@ -467,17 +486,21 @@ function HomeLineChart({ data }) {
             label={{ value: el.label, position: 'insideTopRight', fontSize: 9, fill: '#9CA3AF', dy: -4 }}
           />
         ))}
-        <Line
-          type="monotone"
-          dataKey="total"
-          stroke="#0096D1"
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4, fill: '#0096D1' }}
-          isAnimationActive
-          animationDuration={500}
-          animationEasing="ease-out"
-        />
+        {PARTY_LINES.map(pl => (
+          <Line
+            key={pl.key}
+            type="monotone"
+            dataKey={pl.key}
+            name={pl.label}
+            stroke={pl.color}
+            strokeWidth={pl.width}
+            dot={false}
+            activeDot={{ r: 3, fill: pl.color }}
+            isAnimationActive
+            animationDuration={500}
+            animationEasing="ease-out"
+          />
+        ))}
       </LineChart>
     </ResponsiveContainer>
   )
@@ -566,7 +589,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
         </ChartBox>
       </motion.div>
 
-      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <motion.div layout className="flex flex-col gap-6">
         <motion.div layout>
           <ChartBox
             title="Demografía de impresiones"

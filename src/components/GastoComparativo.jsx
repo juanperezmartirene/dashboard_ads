@@ -118,7 +118,7 @@ export function GastoMetaVsTV({ data }) {
     if (!data?.length || !svgRef.current || !containerRef.current) return
 
     const W = containerRef.current.clientWidth
-    const margin = { top: 20, right: 160, bottom: 28, left: 80 }
+    const margin = { top: 20, right: 160, bottom: 28, left: 130 }
     const w = W - margin.left - margin.right
     const ROW_H = 56
     const h = data.length * ROW_H

@@ -30,12 +30,6 @@ const PARTY_COLORS = {
   'Otros':            { bg: '#F3F4F6', color: '#6B7280' },
 }
 
-const PARTY_SHORT = {
-  'Partido Nacional': 'PN',
-  'Frente Amplio':    'FA',
-  'Partido Colorado': 'PC',
-  'Otros':            'Otros',
-}
 
 const TIPOLOGIA_LABELS = {
   advocacy:       { label: 'Promoción',  color: '#6366F1' },
@@ -661,7 +655,7 @@ export default function DataTable({ data }) {
                         style={{ backgroundColor: partyC.bg, color: partyC.color }}
                         title={row.part_org}
                       >
-                        {PARTY_SHORT[row.part_org] || row.part_org || '—'}
+                        {row.part_org || '—'}
                       </span>
                     </TableCell>
 

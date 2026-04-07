@@ -142,7 +142,7 @@ export function computeGastoPartido(rows) {
     const sum = (arr, f) => arr.reduce((s, r) => s + (Number(r[f]) || 0), 0)
     return {
       partido: p,
-      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : 'PC',
+      short: p,
       color: PARTY_COLORS[p],
       anuncios: all.length,
       anuncios_internas: int.length,
@@ -204,7 +204,7 @@ export function computeInternasCandidatos(rows) {
 
     return {
       partido: p,
-      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      short: p,
       color: PARTY_COLORS[p] || '#6B7280',
       candidatos,
       total: {
@@ -230,7 +230,7 @@ export function computeNacionalesPartidos(rows) {
     const imp = Math.round(sum(pRows, 'promedio_impresiones'))
     return {
       partido: p,
-      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      short: p,
       color: PARTY_COLORS[p] || '#6B7280',
       anuncios: pRows.length,
       impresiones: imp,
@@ -351,7 +351,7 @@ export function computeTiposPorPartido(rows) {
     }))
     return {
       partido: p,
-      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      short: p,
       color: PARTY_COLORS[p] || '#6B7280',
       n,
       tipos,
@@ -386,7 +386,7 @@ export function computeGastoImpPorTipo(rows) {
 
     return {
       partido: p,
-      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      short: p,
       color: PARTY_COLORS[p] || '#6B7280',
       tipos,
     }
@@ -436,18 +436,23 @@ export function computeSerieTemporal(rows) {
 // ─── Computar datos para charts de Home ─────────────────────────────────────
 
 export function computeTimeSeries(rows) {
-  // Group by month (fecha is "YYYY-MM")
+  const PARTIES = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
   const monthly = {}
   rows.forEach(r => {
     const month = r.fecha
     if (!month) return
-    if (!monthly[month]) monthly[month] = 0
-    monthly[month]++
+    if (!monthly[month]) {
+      monthly[month] = { total: 0 }
+      PARTIES.forEach(p => { monthly[month][p] = 0 })
+    }
+    monthly[month].total++
+    const p = r.part_org_normalized || 'Otros'
+    const key = PARTIES.includes(p) ? p : 'Otros'
+    monthly[month][key]++
   })
-
   return Object.entries(monthly)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([fecha, count]) => ({ fecha, total: count }))
+    .map(([fecha, counts]) => ({ fecha, ...counts }))
 }
 
 export function computeDeptDistribution(rows) {
@@ -487,7 +492,7 @@ export function computeFilteredStats(rows) {
     const imp = sum(pRows, 'promedio_impresiones')
     return {
       partido: p,
-      short: p === 'Partido Nacional' ? 'PN' : p === 'Frente Amplio' ? 'FA' : p === 'Partido Colorado' ? 'PC' : 'Otros',
+      short: p,
       color: PARTY_COLORS[p] || '#6B7280',
       anuncios: pRows.length,
       gasto: Math.round(g),

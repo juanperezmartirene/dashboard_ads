@@ -10,26 +10,6 @@ const PAGE_LINKS = [
   { id: 'equipo',        label: 'Equipo'          },
 ]
 
-const HOME_SECTIONS = [
-  { href: '#resultados', label: 'Resultados'  },
-  { href: '#partidos',   label: 'Por partido' },
-  { href: '#territorial',label: 'Territorio'  },
-  { href: '#datos',      label: 'Datos'       },
-]
-
-const CLASIF_SECTIONS = [
-  { href: '#clasif-intro',        label: 'Clasificación' },
-  { href: '#clasif-totales',      label: 'Distribución'  },
-  { href: '#clasif-temporal',     label: 'Evolución'     },
-  { href: '#clasif-etapa-partido',label: 'Etapa/Partido' },
-  { href: '#clasif-gasto-imp',    label: 'Impacto'       },
-]
-
-const METOD_SECTIONS = [
-  { href: '#estudio',    label: 'El estudio' },
-  { href: '#tipologia',  label: 'Clasificación' },
-  { href: '#corpus',     label: 'El corpus'  },
-]
 
 const PAGE_HEROES = {
   home: {
@@ -53,10 +33,6 @@ const PAGE_HEROES = {
 export default function Header({ page, onNavigate }) {
   const [open, setOpen] = useState(false)
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
-  const sections = page === 'home'          ? HOME_SECTIONS
-    : page === 'clasificacion' ? CLASIF_SECTIONS
-    : page === 'metodologia'   ? METOD_SECTIONS
-    : []
 
   return (
     <header style={{ backgroundColor: '#173363' }}>
@@ -160,29 +136,6 @@ export default function Header({ page, onNavigate }) {
         </p>
       </div>
 
-      {/* ── Anclas de sección ── */}
-      {sections.length > 0 && (
-        <nav
-          className="max-w-6xl mx-auto px-4 md:px-8"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}
-        >
-          <ul className="flex gap-2 overflow-x-auto py-3" style={{ scrollbarWidth: 'none' }}>
-            {sections.map(link => (
-              <li key={link.href} className="shrink-0">
-                <a
-                  href={link.href}
-                  className="block px-4 py-2 text-xs font-semibold text-white rounded-full transition-opacity whitespace-nowrap"
-                  style={{ backgroundColor: '#0096D1', opacity: 0.9 }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                  onMouseLeave={e => e.currentTarget.style.opacity = '0.9'}
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
     </header>
   )
 }

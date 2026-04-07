@@ -54,11 +54,11 @@ export default function DemoPyramid({ data }) {
   return (
     <div>
       <div className="flex items-center justify-center gap-4 mb-2">
-        <span className="flex items-center gap-1.5 text-[10px] text-gray-500">
+        <span className="flex items-center gap-1.5 text-xs text-gray-500">
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS.female }} />
           Mujeres
         </span>
-        <span className="flex items-center gap-1.5 text-[10px] text-gray-500">
+        <span className="flex items-center gap-1.5 text-xs text-gray-500">
           <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS.male }} />
           Hombres
         </span>
@@ -74,14 +74,14 @@ export default function DemoPyramid({ data }) {
             type="number"
             domain={[-domainMax, domainMax]}
             tickFormatter={formatTick}
-            tick={{ fontSize: 10, fill: '#9CA3AF' }}
+            tick={{ fontSize: 12, fill: '#9CA3AF' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             type="category"
             dataKey="age"
-            tick={{ fontSize: 10, fill: '#6B7280' }}
+            tick={{ fontSize: 12, fill: '#6B7280' }}
             axisLine={false}
             tickLine={false}
             width={36}
