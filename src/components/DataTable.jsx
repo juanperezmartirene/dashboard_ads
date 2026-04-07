@@ -15,7 +15,7 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Maximize2, Image, Play, Users, Map } from 'lucide-react'
+import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Image, Play, Users, Map } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useClickOutside } from '@/hooks/use-click-outside'
 import DemoPyramid from '@/components/DemoPyramid'
@@ -24,10 +24,17 @@ import RegionMap from '@/components/RegionMap'
 const SPRING = { type: 'spring', bounce: 0.1, duration: 0.4 }
 
 const PARTY_COLORS = {
-  'Partido Nacional': { bg: '#DBEAFE', color: '#1D4ED8' },
-  'Frente Amplio':    { bg: '#FEE2E2', color: '#DC2626' },
-  'Partido Colorado': { bg: '#FEF3C7', color: '#D97706' },
+  'Partido Nacional': { bg: '#E0F2FE', color: '#0284C7' },
+  'Frente Amplio':    { bg: '#FEF9C3', color: '#A16207' },
+  'Partido Colorado': { bg: '#FEE2E2', color: '#DC2626' },
   'Otros':            { bg: '#F3F4F6', color: '#6B7280' },
+}
+
+const PARTY_SHORT = {
+  'Partido Nacional': 'PN',
+  'Frente Amplio':    'FA',
+  'Partido Colorado': 'PC',
+  'Otros':            'Otros',
 }
 
 const TIPOLOGIA_LABELS = {
@@ -42,7 +49,7 @@ const TIPOLOGIA_LABELS = {
 const ETAPA_BADGE = {
   Internas:   { bg: '#EFF6FF', color: '#3B82F6' },
   Nacionales: { bg: '#FEF3C7', color: '#D97706' },
-  Ballottage: { bg: '#F3E8FF', color: '#7C3AED' },
+  Balotaje:   { bg: '#F3E8FF', color: '#7C3AED' },
 }
 
 function getTipologias(row) {
@@ -52,15 +59,16 @@ function getTipologias(row) {
 }
 
 const PARTIDOS = ['Todos', 'Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
-const ETAPAS   = ['Todas', 'Internas', 'Nacionales', 'Ballottage']
+const ETAPAS   = ['Todas', 'Internas', 'Nacionales', 'Balotaje']
 
 const COLS = [
-  { key: 'page_name',             label: 'Página',          sortable: true,  width: 'w-56 min-w-[14rem]' },
-  { key: 'part_org',              label: 'Partido',         sortable: true,  width: 'w-28 min-w-[7rem]'  },
-  { key: 'etapa',                 label: 'Tipo elección',   sortable: true  },
-  { key: 'departamento_nacional', label: 'Alcance',         sortable: true  },
-  { key: '_tipologia',            label: 'Clasificación',   sortable: false },
-  { key: '_expand',               label: '',                sortable: false },
+  { key: 'page_name',             label: 'Página',        sortable: true,  width: 'w-48 min-w-[12rem]' },
+  { key: 'part_org',              label: 'Partido',       sortable: true,  width: 'w-24 min-w-[6rem]'  },
+  { key: 'etapa',                 label: 'Elección',      sortable: true  },
+  { key: 'departamento_nacional', label: 'Departamento',  sortable: true  },
+  { key: 'promedio_gasto',        label: 'Gasto',         sortable: true  },
+  { key: 'promedio_impresiones',  label: 'Impresiones',   sortable: true  },
+  { key: '_tipologia',            label: 'Clasificación', sortable: false },
 ]
 
 const PAGE_SIZE = 20
@@ -640,22 +648,24 @@ export default function DataTable({ data }) {
                     )}
                     onClick={() => openDetail(row)}
                   >
-                    {/* Página */}
-                    <TableCell className="text-sm font-medium text-gray-700 w-[160px] max-w-0 overflow-hidden">
+                    {/* Página — lleva el motion trigger invisible para el morphing */}
+                    <TableCell className="text-sm font-medium text-gray-700 w-[160px] max-w-0 overflow-hidden relative">
+                      <motion.div layoutId={layoutId} className="absolute inset-0 pointer-events-none" style={{ borderRadius: 6 }} />
                       <span className="block truncate">{row.page_name || '—'}</span>
                     </TableCell>
 
-                    {/* Partido */}
+                    {/* Partido — muestra abreviación */}
                     <TableCell>
                       <span
                         className="text-xs font-medium px-2 py-0.5 rounded whitespace-nowrap"
                         style={{ backgroundColor: partyC.bg, color: partyC.color }}
+                        title={row.part_org}
                       >
-                        {row.part_org || '—'}
+                        {PARTY_SHORT[row.part_org] || row.part_org || '—'}
                       </span>
                     </TableCell>
 
-                    {/* Tipo de elección */}
+                    {/* Elección */}
                     <TableCell>
                       {row.etapa && etapaBdg ? (
                         <span
@@ -671,9 +681,23 @@ export default function DataTable({ data }) {
                       )}
                     </TableCell>
 
-                    {/* Alcance */}
+                    {/* Departamento */}
                     <TableCell className="text-sm text-gray-600 whitespace-nowrap">
                       {row.departamento_nacional || '—'}
+                    </TableCell>
+
+                    {/* Gasto */}
+                    <TableCell className="text-sm font-mono text-gray-700 whitespace-nowrap">
+                      {row.promedio_gasto > 0
+                        ? `U$S ${Math.round(row.promedio_gasto).toLocaleString('es-UY')}`
+                        : <span className="text-gray-300">—</span>}
+                    </TableCell>
+
+                    {/* Impresiones */}
+                    <TableCell className="text-sm font-mono text-gray-700 whitespace-nowrap">
+                      {row.promedio_impresiones > 0
+                        ? Math.round(row.promedio_impresiones).toLocaleString('es-UY')
+                        : <span className="text-gray-300">—</span>}
                     </TableCell>
 
                     {/* Clasificación */}
@@ -713,20 +737,6 @@ export default function DataTable({ data }) {
                       ) : (
                         <span className="text-xs text-gray-300">—</span>
                       )}
-                    </TableCell>
-
-                    {/* Botón expand — trigger del morphing */}
-                    <TableCell className="text-center px-2">
-                      <motion.div
-                        layoutId={layoutId}
-                        className={cn(
-                          'inline-flex items-center justify-center rounded p-1',
-                          isOpen ? 'text-blue-500' : 'text-gray-400'
-                        )}
-                        style={{ borderRadius: 6 }}
-                      >
-                        <Maximize2 className="size-3.5" />
-                      </motion.div>
                     </TableCell>
                   </TableRow>
                 )

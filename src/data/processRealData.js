@@ -56,7 +56,7 @@ function normalizeEtapa(te) {
   const lower = te.toLowerCase()
   if (lower === 'internas') return 'Internas'
   if (lower === 'nacionales') return 'Nacionales'
-  if (lower === 'balotaje' || lower === 'ballottage') return 'Ballottage'
+  if (lower === 'balotaje' || lower === 'ballottage') return 'Balotaje'
   return te
 }
 
@@ -102,9 +102,9 @@ export function processData(raw) {
 
 // ─── Colores por partido ────────────────────────────────────────────────────
 const PARTY_COLORS = {
-  'Partido Nacional': '#1D4ED8',
-  'Frente Amplio':    '#DC2626',
-  'Partido Colorado': '#D97706',
+  'Partido Nacional': '#0EA5E9',
+  'Frente Amplio':    '#EAB308',
+  'Partido Colorado': '#EF4444',
   'Otros':            '#6B7280',
 }
 
@@ -113,7 +113,7 @@ const PARTY_COLORS = {
 export function computeGastoMeta(rows) {
   const internas = rows.filter(r => r.etapa === 'Internas')
   const nacionales = rows.filter(r => r.etapa === 'Nacionales')
-  const ballottage = rows.filter(r => r.etapa === 'Ballottage')
+  const ballottage = rows.filter(r => r.etapa === 'Balotaje')
 
   const sum = (arr, field) => arr.reduce((s, r) => s + (Number(r[field]) || 0), 0)
 
@@ -121,7 +121,7 @@ export function computeGastoMeta(rows) {
     total_anuncios:      rows.length,
     anuncios_internas:   internas.length,
     anuncios_nacionales: nacionales.length,
-    anuncios_ballottage: ballottage.length,
+    anuncios_balotaje: ballottage.length,
     gasto_total:         Math.round(sum(rows, 'promedio_gasto')),
     gasto_internas:      Math.round(sum(internas, 'promedio_gasto')),
     gasto_nacionales:    Math.round(sum(nacionales, 'promedio_gasto')),
@@ -577,4 +577,33 @@ export function computeKPIs(rows, meta) {
       sub: `Internas: ${meta.imp_internas > 1e6 ? (meta.imp_internas / 1e6).toFixed(0) + ' M' : meta.imp_internas.toLocaleString('es-UY')} · Nacionales: ${meta.imp_nacionales > 1e6 ? (meta.imp_nacionales / 1e6).toFixed(0) + ' M' : meta.imp_nacionales.toLocaleString('es-UY')}`,
     },
   ]
+}
+
+// ─── Demografía agregada para pirámide en Home ───────────────────────────────
+// Pondera la distribución demográfica de cada anuncio por sus impresiones
+export function computeAggregateDemographics(filteredRows, adDetails) {
+  if (!adDetails || filteredRows.length === 0) return []
+
+  const AGE_ORDER = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+  const totals = {}   // { "18-24_female": { sum: number, weight: number } }
+  let totalWeight = 0
+
+  filteredRows.forEach(row => {
+    const detail = adDetails[row.id]
+    if (!detail?.demo || detail.demo.length === 0) return
+    const weight = Number(row.promedio_impresiones) || 1
+    totalWeight += weight
+    detail.demo.forEach(({ age, gender, pct }) => {
+      const key = `${age}_${gender}`
+      if (!totals[key]) totals[key] = { age, gender, sum: 0 }
+      totals[key].sum += pct * weight
+    })
+  })
+
+  if (totalWeight === 0) return []
+
+  return Object.values(totals)
+    .map(({ age, gender, sum }) => ({ age, gender, pct: sum / totalWeight }))
+    .filter(d => AGE_ORDER.includes(d.age))
+    .sort((a, b) => AGE_ORDER.indexOf(a.age) - AGE_ORDER.indexOf(b.age))
 }

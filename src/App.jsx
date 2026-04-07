@@ -1,23 +1,26 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip as RechartTooltip,
-  ResponsiveContainer, Cell,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip as RechartTooltip,
+  ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts'
 import Header from './components/Header'
 import FilterPanel from './components/FilterPanel'
-import DepartmentChart from './components/DepartmentChart'
 import DataTable from './components/DataTable'
 import Footer from './components/Footer'
+import DemoPyramid from './components/DemoPyramid'
 import {
   processData, mergeClasificacion,
   computeDeptDistribution,
   computeFilteredStats,
+  computeTimeSeries,
+  computeAggregateDemographics,
   computeTiposTotales, computeCombinaciones, computeTiposPorEtapa,
   computeTiposPorPartido, computeGastoImpPorTipo, computeTiposPorTerritorio,
   computeSerieTemporal,
 } from './data/processRealData'
 import PageTipos from './components/PageTipos'
+import { cn } from './lib/utils'
 
 // ─── Layout primitives ────────────────────────────────────────────────────────
 
@@ -232,7 +235,280 @@ function HomeTop5({ top5 }) {
   )
 }
 
-function HomeResumen({ deptData, filteredStats, hasFilters }) {
+// ─── Mapa coroplético por departamento ───────────────────────────────────────
+
+function createMapProjection(features, width, height) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  function scan(coords) {
+    if (typeof coords[0] === 'number') {
+      if (coords[0] < minX) minX = coords[0]
+      if (coords[0] > maxX) maxX = coords[0]
+      if (coords[1] < minY) minY = coords[1]
+      if (coords[1] > maxY) maxY = coords[1]
+      return
+    }
+    coords.forEach(scan)
+  }
+  features.forEach(f => scan(f.geometry.coordinates))
+  const padding = 12
+  const w = width - padding * 2
+  const h = height - padding * 2
+  const scaleX = w / (maxX - minX)
+  const scaleY = h / (maxY - minY)
+  const scale = Math.min(scaleX, scaleY)
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
+  return ([lon, lat]) => [
+    padding + (lon - cx) * scale + w / 2,
+    padding + (cy - lat) * scale + h / 2,
+  ]
+}
+
+function coordsToSvgPath(coords, project) {
+  if (typeof coords[0][0] === 'number') {
+    return coords.map((p, i) => {
+      const [x, y] = project(p)
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
+    }).join('') + 'Z'
+  }
+  return coords.map(ring => coordsToSvgPath(ring, project)).join('')
+}
+
+function featureToSvgPath(feature, project) {
+  const { type, coordinates } = feature.geometry
+  if (type === 'Polygon') return coordinates.map(ring => coordsToSvgPath(ring, project)).join('')
+  if (type === 'MultiPolygon') return coordinates.map(p => p.map(ring => coordsToSvgPath(ring, project)).join('')).join('')
+  return ''
+}
+
+const MAP_FILL_RANGE = ['#E0F2FE', '#7DD3FC', '#38BDF8', '#0EA5E9', '#0284C7', '#0369A1', '#075985']
+const MAP_METRICS = [
+  { key: 'impresiones', label: 'Impresiones' },
+  { key: 'anuncios',    label: 'Anuncios'    },
+  { key: 'gasto',       label: 'Gasto'       },
+]
+
+function HomeDeptMap({ data }) {
+  const [geojson, setGeojson]   = useState(null)
+  const [metric, setMetric]     = useState('impresiones')
+  const [hovered, setHovered]   = useState(null)
+
+  useEffect(() => {
+    fetch('/data/departamentos.geojson').then(r => r.json()).then(setGeojson).catch(() => {})
+  }, [])
+
+  const lookup = useMemo(() => {
+    if (!data) return {}
+    const maxVal = Math.max(...data.map(d => Number(d[metric]) || 0), 1)
+    const map = {}
+    data.forEach(d => {
+      map[d.nombre] = {
+        ratio:       (Number(d[metric]) || 0) / maxVal,
+        anuncios:    d.anuncios    || 0,
+        impresiones: d.impresiones || 0,
+        gasto:       d.gasto       || 0,
+      }
+    })
+    return map
+  }, [data, metric])
+
+  const maxVal = useMemo(() => Math.max(...(data || []).map(d => Number(d[metric]) || 0), 1), [data, metric])
+
+  const getFill = (name) => {
+    const entry = lookup[name]
+    if (!entry || entry.ratio === 0) return '#F3F4F6'
+    const idx = Math.min(MAP_FILL_RANGE.length - 1, Math.floor(entry.ratio * MAP_FILL_RANGE.length))
+    return MAP_FILL_RANGE[idx]
+  }
+
+  const fmtHovered = (name) => {
+    const entry = lookup[name]
+    if (!entry) return 'sin datos'
+    if (metric === 'impresiones') {
+      const v = entry.impresiones
+      return v > 1e6 ? `${(v / 1e6).toFixed(1)} M imp.` : `${v.toLocaleString('es-UY')} imp.`
+    }
+    if (metric === 'gasto') return `U$S ${entry.gasto.toLocaleString('es-UY')}`
+    return `${entry.anuncios.toLocaleString('es-UY')} anuncios`
+  }
+
+  const fmtMax = () => {
+    if (metric === 'impresiones') return maxVal > 1e6 ? `${(maxVal / 1e6).toFixed(0)} M` : maxVal.toLocaleString('es-UY')
+    if (metric === 'gasto') return `U$S ${maxVal.toLocaleString('es-UY')}`
+    return maxVal.toLocaleString('es-UY')
+  }
+
+  if (!data || data.length === 0) {
+    return <p className="text-xs text-gray-400 italic py-4">Sin datos departamentales con los filtros actuales.</p>
+  }
+
+  const WIDTH = 320, HEIGHT = 340
+  const project = geojson ? createMapProjection(geojson.features, WIDTH, HEIGHT) : null
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-3">
+        {MAP_METRICS.map(m => (
+          <button
+            key={m.key}
+            onClick={() => setMetric(m.key)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded border transition-colors',
+              metric === m.key
+                ? 'border-sky-500 text-sky-700 bg-sky-50 font-medium'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            )}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      {!geojson ? (
+        <div className="flex items-center justify-center h-48 text-xs text-gray-400">Cargando mapa…</div>
+      ) : (
+        <div className="flex flex-col items-center">
+          <svg
+            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            width="100%"
+            className="block max-w-xs mx-auto"
+            role="img"
+            aria-label="Mapa de distribución por departamento"
+          >
+            {geojson.features.map(f => {
+              const name = f.properties.name
+              return (
+                <path
+                  key={name}
+                  d={featureToSvgPath(f, project)}
+                  fill={getFill(name)}
+                  stroke={hovered === name ? '#173363' : '#fff'}
+                  strokeWidth={hovered === name ? 1.5 : 0.5}
+                  onMouseEnter={() => setHovered(name)}
+                  onMouseLeave={() => setHovered(null)}
+                  style={{ cursor: 'default', transition: 'fill 0.3s' }}
+                />
+              )
+            })}
+          </svg>
+          <div className="h-6 mt-1 w-full text-center">
+            {hovered && (
+              <p className="text-xs text-gray-700">
+                <span className="font-medium">{hovered}:</span>{' '}
+                <span className="text-gray-500">{fmtHovered(hovered)}</span>
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] text-gray-400">0</span>
+            {MAP_FILL_RANGE.map((c, i) => (
+              <span key={i} className="inline-block w-3 h-2 rounded-sm" style={{ backgroundColor: c }} />
+            ))}
+            <span className="text-[9px] text-gray-400">{fmtMax()}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Line chart temporal ─────────────────────────────────────────────────────
+
+const ELECTION_REFS = [
+  { fecha: '2024-06', label: 'Internas'   },
+  { fecha: '2024-10', label: 'Nacionales' },
+  { fecha: '2024-11', label: 'Balotaje'   },
+]
+
+function fmtMes(fechaStr) {
+  if (!fechaStr) return ''
+  const [yr, mo] = fechaStr.split('-')
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+  return `${meses[parseInt(mo, 10) - 1]} ${yr.slice(2)}`
+}
+
+function LineTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg">
+      <p className="font-semibold mb-0.5">{fmtMes(label)}</p>
+      <p>{payload[0].value.toLocaleString('es-UY')} anuncios</p>
+    </div>
+  )
+}
+
+function HomeLineChart({ data }) {
+  if (!data || data.length === 0) {
+    return <p className="text-xs text-gray-400 italic py-4">Sin datos temporales con los filtros actuales.</p>
+  }
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={data} margin={{ top: 16, right: 16, bottom: 4, left: 8 }}>
+        <XAxis
+          dataKey="fecha"
+          tickFormatter={fmtMes}
+          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 10, fill: '#9CA3AF' }}
+          tickFormatter={v => v.toLocaleString('es-UY')}
+          axisLine={false}
+          tickLine={false}
+          width={36}
+        />
+        <RechartTooltip content={<LineTooltip />} cursor={{ stroke: '#E5E7EB' }} />
+        {ELECTION_REFS.map(el => (
+          <ReferenceLine
+            key={el.fecha}
+            x={el.fecha}
+            stroke="#D1D5DB"
+            strokeDasharray="3 3"
+            label={{ value: el.label, position: 'insideTopRight', fontSize: 9, fill: '#9CA3AF', dy: -4 }}
+          />
+        ))}
+        <Line
+          type="monotone"
+          dataKey="total"
+          stroke="#0096D1"
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 4, fill: '#0096D1' }}
+          isAnimationActive
+          animationDuration={500}
+          animationEasing="ease-out"
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
+
+// ─── Pirámide demográfica agregada ────────────────────────────────────────────
+
+function HomeDemoPyramid({ data, loading }) {
+  if (loading) {
+    return (
+      <div className="space-y-2 py-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex gap-2 items-center">
+            <div className="w-8 h-3 bg-gray-100 rounded animate-pulse shrink-0" />
+            <div className="h-3 bg-gray-100 rounded animate-pulse" style={{ flex: 1, opacity: 0.3 + i * 0.12 }} />
+            <div className="h-3 bg-gray-100 rounded animate-pulse" style={{ flex: 1, opacity: 0.3 + i * 0.12 }} />
+          </div>
+        ))}
+        <p className="text-[10px] text-gray-400 text-center mt-2">Cargando datos demográficos…</p>
+      </div>
+    )
+  }
+  if (!data || data.length === 0) {
+    return <p className="text-xs text-gray-400 italic py-4 text-center">Sin datos demográficos disponibles.</p>
+  }
+  return <DemoPyramid data={data} />
+}
+
+// ─── Sección resultados ───────────────────────────────────────────────────────
+
+function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsLoading, hasFilters }) {
   return (
     <Section id="resultados" gray>
       <SectionMeta num={1} label="Resultados" />
@@ -273,21 +549,41 @@ function HomeResumen({ deptData, filteredStats, hasFilters }) {
 
         <motion.div layout id="territorial">
           <ChartBox
-            title="Impresiones por departamento"
-            sub="Impresiones estimadas por departamento. Solo anuncios con alcance departamental."
+            title="Distribución por departamento"
+            sub="Solo anuncios con alcance departamental. Pasá el cursor sobre un departamento para ver el valor."
           >
-            <DepartmentChart data={deptData} />
+            <HomeDeptMap data={deptData} />
           </ChartBox>
         </motion.div>
       </motion.div>
 
-      <motion.div layout>
+      <motion.div layout className="mb-6">
         <ChartBox
-          title="Top 5 cuentas por anuncios, gasto e impresiones"
-          sub="Ranking de las principales cuentas anunciantes según los filtros activos."
+          title="Evolución temporal de anuncios"
+          sub="Anuncios publicados por mes según los filtros activos."
         >
-          <HomeTop5 top5={filteredStats.top5} />
+          <HomeLineChart data={timeSeries} />
         </ChartBox>
+      </motion.div>
+
+      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <motion.div layout>
+          <ChartBox
+            title="Demografía de impresiones"
+            sub="Distribución estimada por edad y género. Promedio ponderado por impresiones."
+          >
+            <HomeDemoPyramid data={demoData} loading={adDetailsLoading} />
+          </ChartBox>
+        </motion.div>
+
+        <motion.div layout>
+          <ChartBox
+            title="Top 5 cuentas"
+            sub="Ranking de las principales cuentas anunciantes según los filtros activos."
+          >
+            <HomeTop5 top5={filteredStats.top5} />
+          </ChartBox>
+        </motion.div>
       </motion.div>
     </Section>
   )
@@ -330,7 +626,7 @@ function HomeDatos({ filteredTable, loadingData }) {
   )
 }
 
-function PageHome({ filteredTable, loadingData, selectedParties, setSelectedParties, selectedEtapa, setSelectedEtapa, selectedTerritorio, setSelectedTerritorio, deptData, filteredStats }) {
+function PageHome({ filteredTable, loadingData, selectedParties, setSelectedParties, selectedEtapa, setSelectedEtapa, selectedTerritorio, setSelectedTerritorio, deptData, filteredStats, timeSeries, demoData, adDetailsLoading }) {
   const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas' || selectedTerritorio.length > 0
   return (
     <>
@@ -356,7 +652,14 @@ function PageHome({ filteredTable, loadingData, selectedParties, setSelectedPart
         />
       </Section>
 
-      <HomeResumen deptData={deptData} filteredStats={filteredStats} hasFilters={hasFilters} />
+      <HomeResumen
+        deptData={deptData}
+        filteredStats={filteredStats}
+        timeSeries={timeSeries}
+        demoData={demoData}
+        adDetailsLoading={adDetailsLoading}
+        hasFilters={hasFilters}
+      />
       <HomeDatos filteredTable={filteredTable} loadingData={loadingData} />
     </>
   )
@@ -381,7 +684,7 @@ function MetodEstudio() {
             <strong className="text-gray-800">12.096 anuncios</strong> según su
             función comunicacional, cubriendo tres etapas electorales: las
             elecciones internas de junio, las nacionales de octubre y el
-            ballottage de noviembre.
+            balotaje de noviembre.
           </Prose>
           <Prose>
             <span className="block mt-4">
@@ -527,7 +830,7 @@ const TIMELINE = [
   { label: 'Inicio del período', date: 'Oct 2023',    sub: '12.096 anuncios' },
   { label: 'Elecciones Internas', date: '30 Jun 2024', sub: '6.192 anuncios'  },
   { label: 'Elecciones Nacionales', date: '27 Oct 2024', sub: '5.547 anuncios' },
-  { label: 'Ballottage',          date: '24 Nov 2024', sub: '357 anuncios'   },
+  { label: 'Balotaje',            date: '24 Nov 2024', sub: '357 anuncios'   },
 ]
 
 function MetodCorpus() {
@@ -545,7 +848,7 @@ function MetodCorpus() {
             durante el ciclo electoral 2023–2024. La extracción se realizó de
             forma continua desde octubre de 2023, permitiendo capturar tanto la
             campaña previa a las internas como la escalada final hacia el
-            ballottage.
+            balotaje.
           </Prose>
           <Prose>
             <span className="block mt-4">
@@ -715,6 +1018,8 @@ export default function App() {
   const [selectedTerritorio, setSelectedTerritorio] = useState([])
   const [tableData,    setTableData]    = useState([])
   const [loadingData,  setLoadingData]  = useState(true)
+  const [adDetails,    setAdDetails]    = useState(null)
+  const [adDetailsLoading, setAdDetailsLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
@@ -732,6 +1037,13 @@ export default function App() {
       console.error('[DATA] Error cargando datos:', err)
       setLoadingData(false)
     })
+  }, [])
+
+  useEffect(() => {
+    fetch('/data/adDetails.json')
+      .then(r => r.json())
+      .then(data => { setAdDetails(data); setAdDetailsLoading(false) })
+      .catch(() => { setAdDetails({}); setAdDetailsLoading(false) })
   }, [])
 
   // ── Filtrado de tabla ──
@@ -764,6 +1076,11 @@ export default function App() {
 
   const deptData      = useMemo(() => computeDeptDistribution(filteredTable), [filteredTable])
   const filteredStats = useMemo(() => computeFilteredStats(filteredTable),    [filteredTable])
+  const timeSeries    = useMemo(() => computeTimeSeries(filteredTable),       [filteredTable])
+  const demoData      = useMemo(
+    () => adDetails ? computeAggregateDemographics(filteredTable, adDetails) : [],
+    [filteredTable, adDetails]
+  )
 
   const navigate = (target) => {
     setPage(target)
@@ -778,11 +1095,14 @@ export default function App() {
         <PageHome
           filteredTable={filteredTable}
           loadingData={loadingData}
-          selectedParties={selectedParties}    setSelectedParties={setSelectedParties}
-          selectedEtapa={selectedEtapa}        setSelectedEtapa={setSelectedEtapa}
+          selectedParties={selectedParties}       setSelectedParties={setSelectedParties}
+          selectedEtapa={selectedEtapa}           setSelectedEtapa={setSelectedEtapa}
           selectedTerritorio={selectedTerritorio} setSelectedTerritorio={setSelectedTerritorio}
           deptData={deptData}
           filteredStats={filteredStats}
+          timeSeries={timeSeries}
+          demoData={demoData}
+          adDetailsLoading={adDetailsLoading}
         />
       )}
       {page === 'metodologia' && <PageMetodologia />}

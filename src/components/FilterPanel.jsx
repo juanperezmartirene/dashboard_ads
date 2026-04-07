@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 const PARTIES_LIST   = ['Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
-const ETAPAS_LIST    = ['Todas', 'Internas', 'Nacionales', 'Ballottage']
+const ETAPAS_LIST    = ['Todas', 'Internas', 'Nacionales', 'Balotaje']
 const TERR_LIST      = ['Nacional', 'Montevideo', 'Interior']
 
 export default function FilterPanel({
