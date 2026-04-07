@@ -437,19 +437,23 @@ export function computeSerieTemporal(rows) {
 
 export function computeTimeSeries(rows) {
   const PARTIES = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
+  const emptyMonth = () => {
+    const m = { total: 0 }
+    PARTIES.forEach(p => { m[p] = 0 })
+    return m
+  }
   const monthly = {}
   rows.forEach(r => {
     const month = r.fecha
     if (!month) return
-    if (!monthly[month]) {
-      monthly[month] = { total: 0 }
-      PARTIES.forEach(p => { monthly[month][p] = 0 })
-    }
+    if (!monthly[month]) monthly[month] = emptyMonth()
     monthly[month].total++
     const p = r.part_org_normalized || 'Otros'
     const key = PARTIES.includes(p) ? p : 'Otros'
     monthly[month][key]++
   })
+  // Garantizar que la fecha del Balotaje siempre esté en el dominio del eje X
+  if (!monthly['2024-11']) monthly['2024-11'] = emptyMonth()
   return Object.entries(monthly)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([fecha, counts]) => ({ fecha, ...counts }))
