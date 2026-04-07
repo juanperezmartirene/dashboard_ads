@@ -15,9 +15,11 @@ import {
   Pagination, PaginationContent, PaginationEllipsis,
   PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
 } from '@/components/ui/pagination'
-import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Maximize2, Image, Play } from 'lucide-react'
+import { ExternalLink, X, Calendar, MapPin, DollarSign, Eye, FileText, Tag, Maximize2, Image, Play, Users, Map } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useClickOutside } from '@/hooks/use-click-outside'
+import DemoPyramid from '@/components/DemoPyramid'
+import RegionMap from '@/components/RegionMap'
 
 const SPRING = { type: 'spring', bounce: 0.1, duration: 0.4 }
 
@@ -62,6 +64,35 @@ const COLS = [
 ]
 
 const PAGE_SIZE = 20
+
+// ── Lazy-load adDetails.json (singleton) ──────────────────────────────────────
+
+let _adDetailsCache = null
+let _adDetailsPromise = null
+
+function loadAdDetails() {
+  if (_adDetailsCache) return Promise.resolve(_adDetailsCache)
+  if (!_adDetailsPromise) {
+    _adDetailsPromise = fetch('/data/adDetails.json')
+      .then(r => r.json())
+      .then(data => { _adDetailsCache = data; return data })
+      .catch(() => { _adDetailsCache = {}; return {} })
+  }
+  return _adDetailsPromise
+}
+
+function useAdDetails(adId) {
+  const [details, setDetails] = useState(null)
+
+  useEffect(() => {
+    if (!adId) { setDetails(null); return }
+    loadAdDetails().then(data => {
+      setDetails(data[String(adId)] || null)
+    })
+  }, [adId])
+
+  return details
+}
 
 // ── Morphing Ad Detail Dialog ─────────────────────────────────────────────────
 
@@ -123,9 +154,19 @@ function AdDetail({ row, layoutId, onClose }) {
   const partyColor = PARTY_COLORS[row.part_org] || PARTY_COLORS['Otros']
   const etapaBadge = ETAPA_BADGE[row.etapa]
   const metaUrl    = `https://www.facebook.com/ads/library/?id=${row.id}`
-  const fechas     = [row.ad_delivery_start_time, row.ad_delivery_stop_time].filter(Boolean).join(' → ')
   const tipologias = getTipologias(row)
   const media      = useAdMedia(row.id)
+  const adDetails  = useAdDetails(row.id)
+
+  // Formatear fechas
+  const formatDate = (d) => {
+    if (!d) return null
+    try {
+      return new Date(d + 'T00:00:00').toLocaleDateString('es-UY', { day: 'numeric', month: 'short', year: 'numeric' })
+    } catch { return d }
+  }
+  const fechaInicio = formatDate(row.ad_delivery_start_time)
+  const fechaFin    = formatDate(row.ad_delivery_stop_time)
 
   return (
     <>
@@ -200,7 +241,7 @@ function AdDetail({ row, layoutId, onClose }) {
 
           {/* Métricas */}
           <motion.div
-            className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50/60"
+            className="grid grid-cols-2 sm:grid-cols-5 gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.18 }}
@@ -241,10 +282,18 @@ function AdDetail({ row, layoutId, onClose }) {
             </div>
             <div>
               <p className="text-xs text-gray-400 flex items-center gap-1">
-                <Calendar className="size-3" /> Período
+                <Calendar className="size-3" /> Inicio
               </p>
               <p className="text-sm font-semibold text-gray-800 mt-0.5">
-                {fechas || row._fecha || row.fecha || '—'}
+                {fechaInicio || '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                <Calendar className="size-3" /> Fin
+              </p>
+              <p className="text-sm font-semibold text-gray-800 mt-0.5">
+                {fechaFin || 'Activo'}
               </p>
             </div>
           </motion.div>
@@ -305,6 +354,38 @@ function AdDetail({ row, layoutId, onClose }) {
               <p className="text-xs text-gray-300 italic">Sin clasificación disponible</p>
             )}
           </motion.div>
+
+          {/* Distribución demográfica y regional */}
+          {adDetails && (adDetails.demo || adDetails.region) && (
+            <motion.div
+              className="px-6 py-4 border-b border-gray-100"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.24 }}
+            >
+              <div className={cn(
+                'grid gap-4',
+                adDetails.demo && adDetails.region ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
+              )}>
+                {adDetails.demo && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                      <Users className="size-3" /> Demografía de impresiones
+                    </p>
+                    <DemoPyramid data={adDetails.demo} />
+                  </div>
+                )}
+                {adDetails.region && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                      <Map className="size-3" /> Distribución geográfica
+                    </p>
+                    <RegionMap data={adDetails.region} />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
 
           {/* Texto */}
           <motion.div
