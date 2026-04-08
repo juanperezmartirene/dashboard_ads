@@ -1,6 +1,8 @@
 const AGE_ORDER = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
 const COLORS = { female: '#173363', male: '#0096D1' }
 
+const LABEL_W = 40 // px reservados para cada label de porcentaje
+
 export default function DemoPyramid({ data }) {
   if (!data || data.length === 0) return null
 
@@ -19,8 +21,8 @@ export default function DemoPyramid({ data }) {
     .filter(age => byAge[age])
     .map(age => ({
       age,
-      femalePct: (byAge[age].female * 100),
-      malePct: (byAge[age].male * 100),
+      femalePct: byAge[age].female * 100,
+      malePct:   byAge[age].male   * 100,
     }))
 
   if (chartData.length === 0) return null
@@ -41,60 +43,78 @@ export default function DemoPyramid({ data }) {
         </span>
       </div>
 
-      {/* Filas de barras */}
+      {/* Filas */}
       <div className="space-y-1">
         {chartData.map(row => {
           const femaleW = (row.femalePct / maxPct) * 100
-          const maleW   = (row.malePct  / maxPct) * 100
+          const maleW   = (row.malePct   / maxPct) * 100
           return (
             <div key={row.age} className="flex items-center" style={{ height: 24 }}>
-              {/* Etiqueta de edad */}
+
+              {/* Etiqueta edad — ancho fijo, sin saltos de línea */}
               <span
-                className="shrink-0 text-right text-xs text-gray-500 pr-2"
-                style={{ width: 38 }}
+                className="shrink-0 text-right text-xs text-gray-500 pr-2 whitespace-nowrap"
+                style={{ width: 42 }}
               >
                 {row.age}
               </span>
 
-              {/* Lado mujeres: barra crece hacia la derecha (centrada a la derecha) */}
-              <div className="flex-1 flex items-center justify-end">
-                {row.femalePct > 0 && (
-                  <span className="text-[10px] text-gray-400 mr-1.5 shrink-0">
-                    {row.femalePct.toFixed(1)}%
-                  </span>
-                )}
+              {/* Lado mujeres: label fijo a la izquierda, barra ocupa el resto */}
+              <div className="flex-1 flex items-center justify-end overflow-hidden">
+                {/* Label en su propio slot fijo */}
+                <span
+                  className="shrink-0 text-right text-[10px] text-gray-400 pr-1"
+                  style={{ width: LABEL_W }}
+                >
+                  {row.femalePct > 0 ? `${row.femalePct.toFixed(1)}%` : ''}
+                </span>
+                {/* Barra: max 100% del espacio restante */}
                 <div
                   className="h-4 rounded-l-sm shrink-0"
-                  style={{ width: `${femaleW}%`, backgroundColor: COLORS.female }}
+                  style={{
+                    width: `calc(${femaleW}% - ${LABEL_W}px)`,
+                    maxWidth: `calc(100% - ${LABEL_W}px)`,
+                    backgroundColor: COLORS.female,
+                    minWidth: row.femalePct > 0 ? 2 : 0,
+                  }}
                 />
               </div>
 
               {/* Línea central */}
               <div className="shrink-0 self-stretch w-px" style={{ backgroundColor: '#E5E7EB' }} />
 
-              {/* Lado hombres: barra crece hacia la derecha */}
-              <div className="flex-1 flex items-center justify-start">
+              {/* Lado hombres: barra ocupa espacio, label fijo a la derecha */}
+              <div className="flex-1 flex items-center overflow-hidden">
+                {/* Barra: max 100% del espacio restante */}
                 <div
                   className="h-4 rounded-r-sm shrink-0"
-                  style={{ width: `${maleW}%`, backgroundColor: COLORS.male }}
+                  style={{
+                    width: `calc(${maleW}% - ${LABEL_W}px)`,
+                    maxWidth: `calc(100% - ${LABEL_W}px)`,
+                    backgroundColor: COLORS.male,
+                    minWidth: row.malePct > 0 ? 2 : 0,
+                  }}
                 />
-                {row.malePct > 0 && (
-                  <span className="text-[10px] text-gray-400 ml-1.5 shrink-0">
-                    {row.malePct.toFixed(1)}%
-                  </span>
-                )}
+                {/* Label en su propio slot fijo */}
+                <span
+                  className="shrink-0 text-left text-[10px] text-gray-400 pl-1"
+                  style={{ width: LABEL_W }}
+                >
+                  {row.malePct > 0 ? `${row.malePct.toFixed(1)}%` : ''}
+                </span>
               </div>
+
             </div>
           )
         })}
       </div>
 
       {/* Eje X */}
-      <div className="flex mt-1 text-[10px] text-gray-300" style={{ paddingLeft: 38 }}>
-        <div className="flex-1 flex justify-start">
+      <div className="flex mt-1 text-[10px] text-gray-300" style={{ paddingLeft: 42 }}>
+        <div className="flex-1 flex justify-start pl-10">
           <span>{maxPct.toFixed(0)}%</span>
         </div>
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex justify-end pr-10">
           <span>{maxPct.toFixed(0)}%</span>
         </div>
       </div>
