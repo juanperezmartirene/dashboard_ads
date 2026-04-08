@@ -14,7 +14,7 @@ const PAGE_LINKS = [
 const PAGE_HEROES = {
   home: {
     title: 'Publicidad política digital en Meta durante las elecciones uruguayas 2024',
-    sub: 'Análisis de 12.096 anuncios publicados por los principales partidos políticos en Facebook e Instagram a lo largo de tres etapas electorales.',
+    sub: 'Análisis de todos los anuncios realizados por cuentas institucionales, partidarias y personales vinculadas a actores políticos en las elecciones presidenciales de 2024',
   },
   clasificacion: {
     title: 'Clasificación de anuncios · ROUBERTa',

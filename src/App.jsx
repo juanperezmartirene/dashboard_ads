@@ -36,10 +36,10 @@ function Section({ id, gray, children }) {
   )
 }
 
-function SectionMeta({ num, label }) {
+function SectionMeta({ label }) {
   return (
     <p className="text-xs font-medium tracking-widest mb-2 uppercase" style={{ color: '#0096D1' }}>
-      {String(num).padStart(2, '0')} — {label}
+      {label}
     </p>
   )
 }
@@ -534,11 +534,8 @@ function HomeDemoPyramid({ data, loading }) {
 function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsLoading, hasFilters }) {
   return (
     <Section id="resultados" gray>
-      <SectionMeta num={1} label="Resultados" />
+      <SectionMeta label="Resultados" />
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">
-          Los datos, de un vistazo
-        </h2>
         <AnimatePresence mode="wait">
           {hasFilters && (
             <motion.p
@@ -553,9 +550,6 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
             </motion.p>
           )}
         </AnimatePresence>
-        <p className="text-xs text-gray-400 sm:max-w-xs sm:text-right leading-relaxed">
-          Datos de Meta Ad Library · Oct 2023 – Nov 2024
-        </p>
       </div>
 
       <HomeKPIs stats={filteredStats} />
@@ -573,7 +567,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
         <motion.div layout id="territorial">
           <ChartBox
             title="Distribución por departamento"
-            sub="Solo anuncios con alcance departamental. Pasá el cursor sobre un departamento para ver el valor."
+            sub="Solo anuncios con alcance departamental."
           >
             <HomeDeptMap data={deptData} />
           </ChartBox>
@@ -615,15 +609,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
 function HomeDatos({ filteredTable, loadingData }) {
   return (
     <Section id="datos">
-      <SectionMeta num={2} label="Registro de anuncios" />
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-          Explorar el corpus
-        </h2>
-        <Prose narrow>
-          Hacé clic en cualquier fila para ver la vista previa del anuncio. Los filtros de arriba también afectan esta tabla.
-        </Prose>
-      </div>
+      <SectionMeta label="Registro de anuncios" />
 
       <div className="bg-white border border-gray-200 rounded-sm p-5">
         {loadingData ? (
@@ -636,11 +622,6 @@ function HomeDatos({ filteredTable, loadingData }) {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-xs text-gray-400">
-                {filteredTable.length.toLocaleString('es-UY')} registros con los filtros activos
-              </p>
-            </div>
             <DataTable data={filteredTable} />
           </>
         )}
@@ -693,7 +674,7 @@ function PageHome({ filteredTable, loadingData, selectedParties, setSelectedPart
 function MetodEstudio() {
   return (
     <Section id="estudio">
-      <SectionMeta num={1} label="El estudio" />
+      <SectionMeta label="El estudio" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-5">
@@ -788,7 +769,7 @@ const TYPE_DEFS = [
 function MetodTipologia() {
   return (
     <Section id="tipologia" gray>
-      <SectionMeta num={2} label="La tipología" />
+      <SectionMeta label="La tipología" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 mb-10">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
@@ -859,7 +840,7 @@ const TIMELINE = [
 function MetodCorpus() {
   return (
     <Section id="corpus">
-      <SectionMeta num={3} label="El corpus" />
+      <SectionMeta label="El corpus" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12">
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-5">
@@ -966,7 +947,7 @@ function PageEquipo() {
   return (
     <Section>
       <div className="mb-12">
-        <SectionMeta num={1} label="El equipo" />
+        <SectionMeta label="El equipo" />
         <h2 className="text-2xl font-semibold text-gray-900 mb-3">
           Quiénes somos
         </h2>
