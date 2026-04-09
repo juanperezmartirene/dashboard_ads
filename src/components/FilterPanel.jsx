@@ -64,9 +64,9 @@ export default function FilterPanel({
       </div>
 
       {open && (
-        <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="px-5 py-4 flex flex-wrap gap-x-8 gap-y-5">
           {/* Partido */}
-          <div>
+          <div className="shrink-0">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
               Partido
             </p>
@@ -86,7 +86,7 @@ export default function FilterPanel({
           </div>
 
           {/* Etapa */}
-          <div>
+          <div className="shrink-0">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
               Etapa Electoral
             </p>
@@ -115,7 +115,7 @@ export default function FilterPanel({
                 <select
                   value={selectedPrecandidato}
                   onChange={e => setSelectedPrecandidato(e.target.value)}
-                  className="w-full text-xs border border-gray-200 rounded-sm px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
+                  className="w-48 text-xs border border-gray-200 rounded-sm px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
                 >
                   <option value="Todos">Todos</option>
                   {precandidatosList.map(c => (
@@ -127,7 +127,7 @@ export default function FilterPanel({
           </div>
 
           {/* Territorio */}
-          <div>
+          <div className="shrink-0">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
               Territorio
             </p>
@@ -147,14 +147,14 @@ export default function FilterPanel({
           </div>
 
           {/* Departamento */}
-          <div className="col-span-2 md:col-span-1 lg:col-span-2">
+          <div className="shrink-0">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
               Departamento
             </p>
             <select
               value={selectedDepartamento}
               onChange={e => setSelectedDepartamento(e.target.value)}
-              className="w-full text-xs border border-gray-200 rounded-sm px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
+              className="w-40 text-xs border border-gray-200 rounded-sm px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
             >
               {DEPTOS_LIST.map(d => (
                 <option key={d} value={d}>{d}</option>
