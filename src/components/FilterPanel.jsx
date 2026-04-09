@@ -64,7 +64,7 @@ export default function FilterPanel({
       </div>
 
       {open && (
-        <div className="px-5 py-4 flex flex-wrap gap-x-8 gap-y-5">
+        <div className="px-5 py-4 flex flex-wrap justify-between gap-y-5">
           {/* Partido */}
           <div className="shrink-0">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
