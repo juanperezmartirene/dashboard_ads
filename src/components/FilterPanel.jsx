@@ -1,13 +1,18 @@
 import { useState } from 'react'
+import { DEPTO_MAP } from '../data/processRealData'
 
 const PARTIES_LIST   = ['Frente Amplio', 'Partido Nacional', 'Partido Colorado', 'Otros']
 const ETAPAS_LIST    = ['Todas', 'Internas', 'Nacionales', 'Balotaje']
 const TERR_LIST      = ['Nacional', 'Montevideo', 'Interior']
+const DEPTOS_LIST    = ['Todos', ...Object.values(DEPTO_MAP).sort()]
 
 export default function FilterPanel({
-  selectedParties, setSelectedParties,
-  selectedEtapa,   setSelectedEtapa,
-  selectedTerritorio, setSelectedTerritorio,
+  selectedParties,      setSelectedParties,
+  selectedEtapa,        setSelectedEtapa,
+  selectedTerritorio,   setSelectedTerritorio,
+  selectedDepartamento, setSelectedDepartamento,
+  selectedPrecandidato, setSelectedPrecandidato,
+  precandidatosList = [],
 }) {
   const [open, setOpen] = useState(true)
 
@@ -17,13 +22,19 @@ export default function FilterPanel({
   const toggleTerr = (t) =>
     setSelectedTerritorio(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
 
-  const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas' || selectedTerritorio.length > 0
+  const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas'
+    || selectedTerritorio.length > 0 || selectedDepartamento !== 'Todos'
+    || selectedPrecandidato !== 'Todos'
 
   const clearAll = () => {
     setSelectedParties([])
     setSelectedEtapa('Todas')
     setSelectedTerritorio([])
+    setSelectedDepartamento('Todos')
+    setSelectedPrecandidato('Todos')
   }
+
+  const showPrecandidato = selectedEtapa === 'Internas'
 
   return (
     <div className="mb-5 border border-gray-200 rounded-sm bg-white">
@@ -53,7 +64,7 @@ export default function FilterPanel({
       </div>
 
       {open && (
-        <div className="px-5 py-4 grid grid-cols-3 gap-8">
+        <div className="px-5 py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {/* Partido */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
@@ -94,6 +105,25 @@ export default function FilterPanel({
                 </button>
               ))}
             </div>
+
+            {/* Precandidato (solo cuando etapa = Internas) */}
+            {showPrecandidato && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">
+                  Precandidato
+                </p>
+                <select
+                  value={selectedPrecandidato}
+                  onChange={e => setSelectedPrecandidato(e.target.value)}
+                  className="w-full text-xs border border-gray-200 rounded-sm px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
+                >
+                  <option value="Todos">Todos</option>
+                  {precandidatosList.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Territorio */}
@@ -114,6 +144,22 @@ export default function FilterPanel({
                 </label>
               ))}
             </div>
+          </div>
+
+          {/* Departamento */}
+          <div className="col-span-2 md:col-span-1 lg:col-span-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+              Departamento
+            </p>
+            <select
+              value={selectedDepartamento}
+              onChange={e => setSelectedDepartamento(e.target.value)}
+              className="w-full text-xs border border-gray-200 rounded-sm px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
+            >
+              {DEPTOS_LIST.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
           </div>
         </div>
       )}

@@ -3,17 +3,18 @@ const COLORS = { female: '#173363', male: '#0096D1' }
 
 const LABEL_W = 40 // px reservados para cada label de porcentaje
 
-export default function DemoPyramid({ data }) {
+export default function DemoPyramid({ data, metric = 'impresiones' }) {
   if (!data || data.length === 0) return null
 
   const byAge = {}
   data.forEach(d => {
     if (!byAge[d.age]) byAge[d.age] = { age: d.age, female: 0, male: 0 }
-    if (d.gender === 'female') byAge[d.age].female = d.pct
-    else if (d.gender === 'male') byAge[d.age].male = d.pct
+    const val = metric === 'gasto' ? (d.gastoFrac ?? d.pct) : d.pct
+    if (d.gender === 'female') byAge[d.age].female = val
+    else if (d.gender === 'male') byAge[d.age].male = val
     else if (d.gender === 'unknown') {
-      byAge[d.age].female += d.pct / 2
-      byAge[d.age].male += d.pct / 2
+      byAge[d.age].female += val / 2
+      byAge[d.age].male += val / 2
     }
   })
 
@@ -51,7 +52,7 @@ export default function DemoPyramid({ data }) {
           return (
             <div key={row.age} className="flex items-center" style={{ height: 24 }}>
 
-              {/* Etiqueta edad — ancho fijo, sin saltos de línea */}
+              {/* Etiqueta edad */}
               <span
                 className="shrink-0 text-right text-xs text-gray-500 pr-2 whitespace-nowrap"
                 style={{ width: 42 }}
@@ -59,18 +60,16 @@ export default function DemoPyramid({ data }) {
                 {row.age}
               </span>
 
-              {/* Lado mujeres: label fijo a la izquierda, barra ocupa el resto */}
+              {/* Lado mujeres */}
               <div className="flex-1 flex items-center justify-end overflow-hidden">
-                {/* Label en su propio slot fijo */}
                 <span
                   className="shrink-0 text-right text-[10px] text-gray-400 pr-1"
                   style={{ width: LABEL_W }}
                 >
                   {row.femalePct > 0 ? `${row.femalePct.toFixed(1)}%` : ''}
                 </span>
-                {/* Barra: max 100% del espacio restante */}
                 <div
-                  className="h-4 rounded-l-sm shrink-0"
+                  className="h-4 rounded-l-sm shrink-0 transition-all duration-500"
                   style={{
                     width: `calc(${femaleW}% - ${LABEL_W}px)`,
                     maxWidth: `calc(100% - ${LABEL_W}px)`,
@@ -83,11 +82,10 @@ export default function DemoPyramid({ data }) {
               {/* Línea central */}
               <div className="shrink-0 self-stretch w-px" style={{ backgroundColor: '#E5E7EB' }} />
 
-              {/* Lado hombres: barra ocupa espacio, label fijo a la derecha */}
+              {/* Lado hombres */}
               <div className="flex-1 flex items-center overflow-hidden">
-                {/* Barra: max 100% del espacio restante */}
                 <div
-                  className="h-4 rounded-r-sm shrink-0"
+                  className="h-4 rounded-r-sm shrink-0 transition-all duration-500"
                   style={{
                     width: `calc(${maleW}% - ${LABEL_W}px)`,
                     maxWidth: `calc(100% - ${LABEL_W}px)`,
@@ -95,7 +93,6 @@ export default function DemoPyramid({ data }) {
                     minWidth: row.malePct > 0 ? 2 : 0,
                   }}
                 />
-                {/* Label en su propio slot fijo */}
                 <span
                   className="shrink-0 text-left text-[10px] text-gray-400 pl-1"
                   style={{ width: LABEL_W }}

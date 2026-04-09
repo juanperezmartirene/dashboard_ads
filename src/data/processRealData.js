@@ -2,7 +2,7 @@
 // Limpia, mapea y agrega los datos cargados desde realData.json
 
 // ─── Mapeo de abreviaciones de departamentos ────────────────────────────────
-const DEPTO_MAP = {
+export const DEPTO_MAP = {
   AR: 'Artigas',
   CA: 'Canelones',
   CL: 'Cerro Largo',
@@ -22,6 +22,25 @@ const DEPTO_MAP = {
   SO: 'Soriano',
   TA: 'Tacuarembó',
   TT: 'Treinta y Tres',
+}
+
+// ─── Normalizar nombre de precandidato ──────────────────────────────────────
+// "APELLIDO APELLIDO, nombre nombre" → "Nombre Apellido Apellido"
+// Retorna null para valores que no son nombres de candidatos
+const SKIP_PRES = new Set([
+  'Nacionales', 'Internas', 'Plebiscito', 'Plebiscito de seguridad',
+  'Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros',
+])
+export function normalizePrecandidatoName(cand) {
+  if (!cand || SKIP_PRES.has(cand)) return null
+  if (cand.includes(',')) {
+    const parts = cand.split(',').map(s => s.trim())
+    const last = parts[0].split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+    const first = parts[1].split(' ')[0]
+    return `${first} ${last}`
+  }
+  return cand
 }
 
 // ─── Limpieza de texto ──────────────────────────────────────────────────────
@@ -98,6 +117,10 @@ function processRow(row) {
     // Campos que DataTable espera (compatibilidad mock → real)
     _gasto: gasto > 0 ? `U$S ${Math.round(gasto).toLocaleString('es-UY')}` : '—',
     _impresiones: Math.round(imp),
+    // Nombre normalizado del precandidato (solo para internas)
+    pre_pres_display: normalizeEtapa(row.tipo_eleccion) === 'Internas'
+      ? normalizePrecandidatoName(row.pre_pres)
+      : null,
   }
 }
 
@@ -441,26 +464,43 @@ export function computeSerieTemporal(rows) {
 
 // ─── Computar datos para charts de Home ─────────────────────────────────────
 
-export function computeTimeSeries(rows) {
+// Calcula el lunes de la semana que contiene la fecha dada (YYYY-MM-DD)
+function getWeekStart(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr + 'T12:00:00')
+  if (isNaN(d.getTime())) return null
+  const day = d.getDay() // 0=Dom, 1=Lun...
+  const diff = day === 0 ? -6 : 1 - day
+  d.setDate(d.getDate() + diff)
+  return d.toISOString().slice(0, 10) // YYYY-MM-DD
+}
+
+export function computeTimeSeries(rows, metric = 'anuncios') {
   const PARTIES = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
-  const emptyMonth = () => {
-    const m = { total: 0 }
-    PARTIES.forEach(p => { m[p] = 0 })
-    return m
+  const emptyWeek = () => {
+    const w = { total: 0 }
+    PARTIES.forEach(p => { w[p] = 0 })
+    return w
   }
-  const monthly = {}
+  const weekly = {}
   rows.forEach(r => {
-    const month = r.fecha
-    if (!month) return
-    if (!monthly[month]) monthly[month] = emptyMonth()
-    monthly[month].total++
+    // Usar ad_delivery_start_time para precisión semanal; fallback a YYYY-MM-15
+    const raw = r.ad_delivery_start_time || (r.fecha ? `${r.fecha}-15` : null)
+    const weekStart = getWeekStart(raw)
+    if (!weekStart) return
+    if (!weekly[weekStart]) weekly[weekStart] = emptyWeek()
     const p = r.part_org_normalized || 'Otros'
     const key = PARTIES.includes(p) ? p : 'Otros'
-    monthly[month][key]++
+    const val = metric === 'impresiones' ? (Number(r.promedio_impresiones) || 0)
+              : metric === 'gasto'       ? (Number(r.promedio_gasto) || 0)
+              : 1
+    weekly[weekStart].total += val
+    weekly[weekStart][key]  += val
   })
-  // Garantizar que la fecha del Balotaje siempre esté en el dominio del eje X
-  if (!monthly['2024-11']) monthly['2024-11'] = emptyMonth()
-  return Object.entries(monthly)
+  // Garantizar que la semana del Balotaje (24 nov 2024 → lunes 18 nov) esté en el dominio
+  const balotajeWeek = '2024-11-18'
+  if (!weekly[balotajeWeek]) weekly[balotajeWeek] = emptyWeek()
+  return Object.entries(weekly)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([fecha, counts]) => ({ fecha, ...counts }))
 }
@@ -600,7 +640,7 @@ export function computeAggregateDemographics(filteredRows, adDetails) {
   if (!adDetails || filteredRows.length === 0) return []
 
   const AGE_ORDER = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
-  const totals = {}   // { "18-24_female": { sum: number, weight: number } }
+  const totals = {}
   let totalWeight = 0
 
   filteredRows.forEach(row => {
@@ -621,4 +661,102 @@ export function computeAggregateDemographics(filteredRows, adDetails) {
     .map(({ age, gender, sum }) => ({ age, gender, pct: sum / totalWeight }))
     .filter(d => AGE_ORDER.includes(d.age))
     .sort((a, b) => AGE_ORDER.indexOf(a.age) - AGE_ORDER.indexOf(b.age))
+}
+
+// Versión extendida que incluye también gasto ponderado por demografía
+export function computeAggregateDemographicsWithGasto(filteredRows, adDetails) {
+  if (!adDetails || filteredRows.length === 0) return []
+
+  const AGE_ORDER = ['13-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+  const totals = {}
+  let totalImpWeight = 0
+  let totalGastoWeight = 0
+
+  filteredRows.forEach(row => {
+    const detail = adDetails[row.id]
+    if (!detail?.demo || detail.demo.length === 0) return
+    const impWeight   = Number(row.promedio_impresiones) || 1
+    const gastoWeight = Number(row.promedio_gasto) || 0
+    totalImpWeight   += impWeight
+    totalGastoWeight += gastoWeight
+    detail.demo.forEach(({ age, gender, pct }) => {
+      const key = `${age}_${gender}`
+      if (!totals[key]) totals[key] = { age, gender, sumImp: 0, sumGasto: 0 }
+      totals[key].sumImp   += pct * impWeight
+      totals[key].sumGasto += pct * gastoWeight
+    })
+  })
+
+  if (totalImpWeight === 0) return []
+
+  return Object.values(totals)
+    .map(({ age, gender, sumImp, sumGasto }) => ({
+      age,
+      gender,
+      pct:       sumImp   / totalImpWeight,
+      gastoFrac: totalGastoWeight > 0 ? sumGasto / totalGastoWeight : 0,
+    }))
+    .filter(d => AGE_ORDER.includes(d.age))
+    .sort((a, b) => AGE_ORDER.indexOf(a.age) - AGE_ORDER.indexOf(b.age))
+}
+
+// ─── Gasto por género ────────────────────────────────────────────────────────
+// Distribuye el gasto de cada anuncio según la proporción hombre/mujer de su demografía
+export function computeGastoGenero(filteredRows, adDetails) {
+  if (!adDetails || filteredRows.length === 0)
+    return { hombres: 0, mujeres: 0, sinDatos: 0 }
+
+  let hombres = 0, mujeres = 0, sinDatos = 0
+
+  filteredRows.forEach(row => {
+    const gasto  = Number(row.promedio_gasto) || 0
+    const detail = adDetails[row.id]
+    if (!detail?.demo || detail.demo.length === 0) {
+      sinDatos += gasto
+      return
+    }
+    let pctMale = 0, pctFemale = 0
+    detail.demo.forEach(({ gender, pct }) => {
+      if (gender === 'male')   pctMale   += pct
+      else if (gender === 'female') pctFemale += pct
+    })
+    const total = pctMale + pctFemale
+    if (total <= 0) { sinDatos += gasto; return }
+    hombres += gasto * (pctMale   / total)
+    mujeres += gasto * (pctFemale / total)
+  })
+
+  return {
+    hombres:  Math.round(hombres),
+    mujeres:  Math.round(mujeres),
+    sinDatos: Math.round(sinDatos),
+  }
+}
+
+// ─── Mapa página → partido / precandidato ────────────────────────────────────
+// Determina, para cada página, su partido y precandidato asociado.
+// Si todos sus anuncios corresponden al mismo valor → ese valor;
+// si hay más de uno → "Apoyo a múltiples".
+export function computePagePartyMap(allRows) {
+  const pages = {}
+  allRows.forEach(r => {
+    const name = r.page_name || 'Desconocido'
+    if (!pages[name]) pages[name] = { parties: new Set(), precs: new Set() }
+    pages[name].parties.add(r.part_org_normalized || 'Otros')
+    if (r.etapa === 'Internas' && r.pre_pres_display) {
+      pages[name].precs.add(r.pre_pres_display)
+    }
+  })
+
+  const map = new Map()
+  for (const [name, { parties, precs }] of Object.entries(pages)) {
+    const partyArr = [...parties]
+    const partido  = partyArr.length === 1 ? partyArr[0] : 'Apoyo a múltiples'
+    const precArr  = [...precs]
+    const precandidato = precArr.length === 0 ? null
+                       : precArr.length === 1 ? precArr[0]
+                       : 'Apoyo a múltiples'
+    map.set(name, { partido, precandidato })
+  }
+  return map
 }

@@ -15,9 +15,13 @@ import {
   computeFilteredStats,
   computeTimeSeries,
   computeAggregateDemographics,
+  computeAggregateDemographicsWithGasto,
+  computeGastoGenero,
+  computePagePartyMap,
   computeTiposTotales, computeCombinaciones, computeTiposPorEtapa,
   computeTiposPorPartido, computeGastoImpPorTipo, computeTiposPorTerritorio,
   computeSerieTemporal,
+  DEPTO_MAP,
 } from './data/processRealData'
 import PageTipos from './components/PageTipos'
 import { cn } from './lib/utils'
@@ -130,7 +134,7 @@ function HomeKPIs({ stats }) {
   )
 }
 
-function PartyTooltip({ active, payload }) {
+function PartyTooltip({ active, payload, metric }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
@@ -139,76 +143,107 @@ function PartyTooltip({ active, payload }) {
       <p>Anuncios: {d.anuncios.toLocaleString('es-UY')}</p>
       <p>Gasto est.: U$S {d.gasto.toLocaleString('es-UY')}</p>
       <p>Impresiones: {d.impresiones > 1e6 ? (d.impresiones / 1e6).toFixed(1) + ' M' : d.impresiones.toLocaleString('es-UY')}</p>
-      <p>{d.imp_dolar.toLocaleString('es-UY')} imp/U$S · {d.cuentas} cuentas</p>
+      <p>{d.cuentas} cuentas</p>
     </div>
   )
 }
 
+const PARTY_METRICS = [
+  { key: 'anuncios',    label: 'Anuncios',     fmt: v => v.toLocaleString('es-UY') },
+  { key: 'impresiones', label: 'Impresiones',  fmt: v => v > 1e6 ? `${(v/1e6).toFixed(1)} M` : v.toLocaleString('es-UY') },
+  { key: 'gasto',       label: 'Gasto',        fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
+]
+
 function HomePartyChart({ stats }) {
-  // Solo mostrar partidos con anuncios > 0 (los no seleccionados quedan excluidos)
+  const [metric, setMetric] = useState('anuncios')
+  const metaDef = PARTY_METRICS.find(m => m.key === metric)
+  // Solo mostrar partidos con anuncios > 0
   const data = stats.byParty.filter(p => p.anuncios > 0)
 
   if (data.length === 0) {
-    return (
-      <p className="text-xs text-gray-400 italic py-4">
-        Sin anuncios con los filtros actuales.
-      </p>
-    )
+    return <p className="text-xs text-gray-400 italic py-4">Sin anuncios con los filtros actuales.</p>
   }
 
   const chartHeight = Math.max(80, data.length * 48)
 
   return (
-    <ResponsiveContainer width="100%" height={chartHeight}>
-      <BarChart
-        data={data}
-        layout="vertical"
-        margin={{ top: 4, right: 56, bottom: 4, left: 0 }}
-      >
-        <XAxis
-          type="number"
-          tick={{ fontSize: 12, fill: '#9CA3AF' }}
-          tickFormatter={v => v.toLocaleString('es-UY')}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          type="category"
-          dataKey="short"
-          tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }}
-          width={120}
-          axisLine={false}
-          tickLine={false}
-        />
-        <RechartTooltip
-          content={<PartyTooltip />}
-          cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-        />
-        <Bar
-          dataKey="anuncios"
-          radius={[0, 3, 3, 0]}
-          isAnimationActive
-          animationDuration={450}
-          animationEasing="ease-out"
-          label={{
-            position: 'right',
-            formatter: v => v.toLocaleString('es-UY'),
-            style: { fontSize: 12, fill: '#6B7280' },
-          }}
+    <div>
+      <div className="flex gap-1 mb-3">
+        {PARTY_METRICS.map(m => (
+          <button
+            key={m.key}
+            onClick={() => setMetric(m.key)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded border transition-colors',
+              metric === m.key
+                ? 'border-sky-500 text-sky-700 bg-sky-50 font-medium'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            )}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <ResponsiveContainer width="100%" height={chartHeight}>
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 4, right: 80, bottom: 4, left: 0 }}
         >
-          {data.map(p => (
-            <Cell key={p.partido} fill={p.color} fillOpacity={0.82} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+          <XAxis
+            type="number"
+            tick={{ fontSize: 12, fill: '#9CA3AF' }}
+            tickFormatter={v => metaDef.fmt(v)}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            type="category"
+            dataKey="short"
+            tick={{ fontSize: 13, fill: '#374151', fontWeight: 500 }}
+            width={120}
+            axisLine={false}
+            tickLine={false}
+          />
+          <RechartTooltip
+            content={<PartyTooltip metric={metric} />}
+            cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+          />
+          <Bar
+            dataKey={metric}
+            radius={[0, 3, 3, 0]}
+            isAnimationActive
+            animationDuration={450}
+            animationEasing="ease-out"
+            label={{
+              position: 'right',
+              formatter: v => metaDef.fmt(v),
+              style: { fontSize: 11, fill: '#6B7280' },
+            }}
+          >
+            {data.map(p => (
+              <Cell key={p.partido} fill={p.color} fillOpacity={0.82} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 
-function HomeTop5({ top5 }) {
+const PARTY_SHORT = {
+  'Partido Nacional': 'PN', 'Frente Amplio': 'FA', 'Partido Colorado': 'PC',
+  'Otros': 'Otros', 'Apoyo a múltiples': '···',
+}
+const PARTY_COLORS_MAP = {
+  'Partido Nacional': '#0EA5E9', 'Frente Amplio': '#EAB308',
+  'Partido Colorado': '#EF4444', 'Otros': '#6B7280', 'Apoyo a múltiples': '#9CA3AF',
+}
+
+function HomeTop5({ top5, pagePartyMap }) {
   const cols = [
-    { key: 'anuncios', label: 'Por anuncios', fmt: v => v.toLocaleString('es-UY') },
-    { key: 'gasto', label: 'Por gasto', fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
+    { key: 'anuncios',    label: 'Por anuncios',    fmt: v => v.toLocaleString('es-UY') },
+    { key: 'gasto',       label: 'Por gasto',       fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
     { key: 'impresiones', label: 'Por impresiones', fmt: v => v > 1e6 ? (v / 1e6).toFixed(1) + ' M' : v.toLocaleString('es-UY') },
   ]
   return (
@@ -220,9 +255,19 @@ function HomeTop5({ top5 }) {
             {top5.map((row, i) => {
               const item = row[col.key]
               if (!item) return null
+              const info = pagePartyMap?.get(item.nombre)
+              const partido = info?.partido
               return (
                 <div key={i} className="flex items-center gap-2">
                   <span className="text-xs font-mono text-gray-300 w-4 shrink-0">{i + 1}</span>
+                  {partido && (
+                    <span
+                      className="text-[9px] font-mono px-1 py-0.5 rounded-sm shrink-0"
+                      style={{ backgroundColor: (PARTY_COLORS_MAP[partido] || '#9CA3AF') + '22', color: PARTY_COLORS_MAP[partido] || '#9CA3AF' }}
+                    >
+                      {PARTY_SHORT[partido] || partido.slice(0, 2)}
+                    </span>
+                  )}
                   <span className="text-xs text-gray-700 flex-1 truncate">{item.nombre}</span>
                   <span className="text-xs font-mono text-gray-500 shrink-0">{col.fmt(item.valor)}</span>
                 </div>
@@ -413,18 +458,27 @@ function HomeDeptMap({ data }) {
 
 // ─── Line chart temporal ─────────────────────────────────────────────────────
 
+// Semanas donde ocurren las elecciones (lunes de la semana del evento)
 const ELECTION_REFS = [
-  { fecha: '2024-06', label: 'Internas'   },
-  { fecha: '2024-10', label: 'Nacionales' },
-  { fecha: '2024-11', label: 'Balotaje'   },
+  { fecha: '2024-06-24', label: 'Internas'   },
+  { fecha: '2024-10-21', label: 'Nacionales' },
+  { fecha: '2024-11-18', label: 'Balotaje'   },
 ]
 
-function fmtMes(fechaStr) {
-  if (!fechaStr) return ''
-  const [yr, mo] = fechaStr.split('-')
+// Formatea YYYY-MM-DD como "dd Mmm"
+function fmtWeek(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr + 'T12:00:00')
+  if (isNaN(d.getTime())) return dateStr
   const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-  return `${meses[parseInt(mo, 10) - 1]} ${yr.slice(2)}`
+  return `${d.getDate()} ${meses[d.getMonth()]}`
 }
+
+const LINE_METRICS = [
+  { key: 'anuncios',    label: 'Anuncios',    fmt: v => v.toLocaleString('es-UY') },
+  { key: 'impresiones', label: 'Impresiones', fmt: v => v > 1e6 ? `${(v/1e6).toFixed(1)} M` : v.toLocaleString('es-UY') },
+  { key: 'gasto',       label: 'Gasto',       fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
+]
 
 const PARTY_LINES = [
   { key: 'total',            label: 'Total',             color: '#0096D1', width: 2.5 },
@@ -434,81 +488,111 @@ const PARTY_LINES = [
   { key: 'Otros',            label: 'Otros',             color: '#6B7280', width: 1.5 },
 ]
 
-function LineTooltip({ active, payload, label }) {
+function LineTooltip({ active, payload, label, fmtVal }) {
   if (!active || !payload?.length) return null
   const byKey = Object.fromEntries(payload.map(p => [p.dataKey, p.value]))
   return (
     <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded shadow-lg space-y-0.5">
-      <p className="font-semibold mb-1">{fmtMes(label)}</p>
+      <p className="font-semibold mb-1">Semana del {fmtWeek(label)}</p>
       {PARTY_LINES.map(pl => byKey[pl.key] != null && (
         <p key={pl.key} style={{ color: pl.color }}>
-          {pl.label}: {byKey[pl.key].toLocaleString('es-UY')}
+          {pl.label}: {fmtVal ? fmtVal(byKey[pl.key]) : byKey[pl.key].toLocaleString('es-UY')}
         </p>
       ))}
     </div>
   )
 }
 
-function HomeLineChart({ data }) {
+function HomeLineChart({ data, metricKey, onMetricChange }) {
+  const metaDef = LINE_METRICS.find(m => m.key === metricKey) || LINE_METRICS[0]
   if (!data || data.length === 0) {
     return <p className="text-xs text-gray-400 italic py-4">Sin datos temporales con los filtros actuales.</p>
   }
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <LineChart data={data} margin={{ top: 16, right: 16, bottom: 4, left: 8 }}>
-        <XAxis
-          dataKey="fecha"
-          tickFormatter={fmtMes}
-          tick={{ fontSize: 12, fill: '#9CA3AF' }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          tick={{ fontSize: 12, fill: '#9CA3AF' }}
-          tickFormatter={v => v.toLocaleString('es-UY')}
-          axisLine={false}
-          tickLine={false}
-          width={36}
-        />
-        <RechartTooltip content={<LineTooltip />} cursor={{ stroke: '#E5E7EB' }} />
-        <Legend
-          verticalAlign="bottom"
-          iconType="plainline"
-          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-          formatter={(value) => <span style={{ color: '#6B7280' }}>{value}</span>}
-        />
-        {ELECTION_REFS.map(el => (
-          <ReferenceLine
-            key={el.fecha}
-            x={el.fecha}
-            stroke="#D1D5DB"
-            strokeDasharray="3 3"
-            label={{ value: el.label, position: 'insideTopRight', fontSize: 9, fill: '#9CA3AF', dy: -4 }}
-          />
+    <div>
+      <div className="flex gap-1 mb-3">
+        {LINE_METRICS.map(m => (
+          <button
+            key={m.key}
+            onClick={() => onMetricChange(m.key)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded border transition-colors',
+              metricKey === m.key
+                ? 'border-sky-500 text-sky-700 bg-sky-50 font-medium'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            )}
+          >
+            {m.label}
+          </button>
         ))}
-        {PARTY_LINES.map(pl => (
-          <Line
-            key={pl.key}
-            type="monotone"
-            dataKey={pl.key}
-            name={pl.label}
-            stroke={pl.color}
-            strokeWidth={pl.width}
-            dot={false}
-            activeDot={{ r: 3, fill: pl.color }}
-            isAnimationActive
-            animationDuration={500}
-            animationEasing="ease-out"
+      </div>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={data} margin={{ top: 16, right: 16, bottom: 4, left: 8 }}>
+          <XAxis
+            dataKey="fecha"
+            tickFormatter={fmtWeek}
+            tick={{ fontSize: 11, fill: '#9CA3AF' }}
+            axisLine={false}
+            tickLine={false}
+            interval="preserveStartEnd"
           />
-        ))}
-      </LineChart>
-    </ResponsiveContainer>
+          <YAxis
+            tick={{ fontSize: 12, fill: '#9CA3AF' }}
+            tickFormatter={v => metaDef.fmt(v)}
+            axisLine={false}
+            tickLine={false}
+            width={52}
+          />
+          <RechartTooltip
+            content={<LineTooltip fmtVal={metaDef.fmt} />}
+            cursor={{ stroke: '#E5E7EB' }}
+          />
+          <Legend
+            verticalAlign="bottom"
+            iconType="plainline"
+            wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+            formatter={(value) => <span style={{ color: '#6B7280' }}>{value}</span>}
+          />
+          {ELECTION_REFS.map(el => (
+            <ReferenceLine
+              key={el.fecha}
+              x={el.fecha}
+              stroke="#D1D5DB"
+              strokeDasharray="3 3"
+              label={{ value: el.label, position: 'insideTopRight', fontSize: 9, fill: '#9CA3AF', dy: -4 }}
+            />
+          ))}
+          {PARTY_LINES.map(pl => (
+            <Line
+              key={pl.key}
+              type="monotone"
+              dataKey={pl.key}
+              name={pl.label}
+              stroke={pl.color}
+              strokeWidth={pl.width}
+              dot={false}
+              activeDot={{ r: 3, fill: pl.color }}
+              isAnimationActive
+              animationDuration={500}
+              animationEasing="ease-out"
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 
 // ─── Pirámide demográfica agregada ────────────────────────────────────────────
 
-function HomeDemoPyramid({ data, loading }) {
+const DEMO_METRICS = [
+  { key: 'impresiones', label: 'Impresiones' },
+  { key: 'gasto',       label: 'Gasto'       },
+]
+
+function HomeDemoPyramid({ data, loading, gastoGenero }) {
+  const [metric, setMetric] = useState('impresiones')
+
   if (loading) {
     return (
       <div className="space-y-2 py-3">
@@ -526,12 +610,74 @@ function HomeDemoPyramid({ data, loading }) {
   if (!data || data.length === 0) {
     return <p className="text-xs text-gray-400 italic py-4 text-center">Sin datos demográficos disponibles.</p>
   }
-  return <DemoPyramid data={data} />
+
+  const totalGasto = gastoGenero ? gastoGenero.hombres + gastoGenero.mujeres : 0
+
+  return (
+    <div>
+      <div className="flex gap-1 mb-3">
+        {DEMO_METRICS.map(m => (
+          <button
+            key={m.key}
+            onClick={() => setMetric(m.key)}
+            className={cn(
+              'text-xs px-2.5 py-1 rounded border transition-colors',
+              metric === m.key
+                ? 'border-sky-500 text-sky-700 bg-sky-50 font-medium'
+                : 'border-gray-200 text-gray-500 hover:border-gray-300'
+            )}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      <DemoPyramid data={data} metric={metric} />
+
+      {metric === 'gasto' && gastoGenero && totalGasto > 0 && (
+        <div className="mt-4 border-t border-gray-100 pt-3">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Gasto estimado por género</p>
+          <div className="flex gap-3 items-center">
+            <div className="flex-1">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-gray-600 font-medium">Mujeres</span>
+                <span className="text-gray-500 font-mono">
+                  U$S {gastoGenero.mujeres.toLocaleString('es-UY')}
+                  <span className="text-gray-300 ml-1">({totalGasto > 0 ? ((gastoGenero.mujeres / totalGasto) * 100).toFixed(1) : 0}%)</span>
+                </span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${totalGasto > 0 ? (gastoGenero.mujeres / totalGasto) * 100 : 0}%`, backgroundColor: '#173363' }}
+                />
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-gray-600 font-medium">Hombres</span>
+                <span className="text-gray-500 font-mono">
+                  U$S {gastoGenero.hombres.toLocaleString('es-UY')}
+                  <span className="text-gray-300 ml-1">({totalGasto > 0 ? ((gastoGenero.hombres / totalGasto) * 100).toFixed(1) : 0}%)</span>
+                </span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${totalGasto > 0 ? (gastoGenero.hombres / totalGasto) * 100 : 0}%`, backgroundColor: '#0096D1' }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Sección resultados ───────────────────────────────────────────────────────
 
-function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsLoading, hasFilters }) {
+function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsLoading, hasFilters, gastoGenero, lineMetric, onLineMetricChange, pagePartyMap }) {
   return (
     <Section id="resultados" gray>
       <SectionMeta label="Resultados" />
@@ -577,19 +723,19 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
       <motion.div layout className="mb-6">
         <ChartBox
           title="Evolución temporal de anuncios"
-          sub="Anuncios publicados por mes según los filtros activos."
+          sub="Publicaciones por semana según los filtros activos."
         >
-          <HomeLineChart data={timeSeries} />
+          <HomeLineChart data={timeSeries} metricKey={lineMetric} onMetricChange={onLineMetricChange} />
         </ChartBox>
       </motion.div>
 
       <motion.div layout className="flex flex-col gap-6">
         <motion.div layout>
           <ChartBox
-            title="Demografía de impresiones"
-            sub="Distribución estimada por edad y género. Promedio ponderado por impresiones."
+            title="Demografía"
+            sub="Distribución estimada por edad y género. Ponderado por impresiones o gasto."
           >
-            <HomeDemoPyramid data={demoData} loading={adDetailsLoading} />
+            <HomeDemoPyramid data={demoData} loading={adDetailsLoading} gastoGenero={gastoGenero} />
           </ChartBox>
         </motion.div>
 
@@ -598,7 +744,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
             title="Top 5 cuentas"
             sub="Ranking de las principales cuentas anunciantes según los filtros activos."
           >
-            <HomeTop5 top5={filteredStats.top5} />
+            <HomeTop5 top5={filteredStats.top5} pagePartyMap={pagePartyMap} />
           </ChartBox>
         </motion.div>
       </motion.div>
@@ -630,11 +776,22 @@ function HomeDatos({ filteredTable, loadingData }) {
   )
 }
 
-function PageHome({ filteredTable, loadingData, selectedParties, setSelectedParties, selectedEtapa, setSelectedEtapa, selectedTerritorio, setSelectedTerritorio, deptData, filteredStats, timeSeries, demoData, adDetailsLoading }) {
-  const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas' || selectedTerritorio.length > 0
+function PageHome({
+  filteredTable, loadingData,
+  selectedParties, setSelectedParties,
+  selectedEtapa, setSelectedEtapa,
+  selectedTerritorio, setSelectedTerritorio,
+  selectedDepartamento, setSelectedDepartamento,
+  selectedPrecandidato, setSelectedPrecandidato,
+  precandidatosList,
+  deptData, filteredStats, timeSeries, demoData, adDetailsLoading,
+  gastoGenero, lineMetric, onLineMetricChange, pagePartyMap,
+}) {
+  const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas'
+    || selectedTerritorio.length > 0 || selectedDepartamento !== 'Todos'
+    || selectedPrecandidato !== 'Todos'
   return (
     <>
-      {/* Filters at top, affecting everything below */}
       <Section id="filtros">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-4">
           <div>
@@ -642,7 +799,7 @@ function PageHome({ filteredTable, loadingData, selectedParties, setSelectedPart
               Publicidad política en Meta · Uruguay 2024
             </h2>
             <Prose narrow>
-              Filtrá por partido, etapa electoral y territorio. Todos los indicadores se actualizan automáticamente.
+              Filtrá por partido, etapa electoral, territorio o departamento. Todos los indicadores se actualizan automáticamente.
             </Prose>
           </div>
         </div>
@@ -653,6 +810,11 @@ function PageHome({ filteredTable, loadingData, selectedParties, setSelectedPart
           setSelectedEtapa={setSelectedEtapa}
           selectedTerritorio={selectedTerritorio}
           setSelectedTerritorio={setSelectedTerritorio}
+          selectedDepartamento={selectedDepartamento}
+          setSelectedDepartamento={setSelectedDepartamento}
+          selectedPrecandidato={selectedPrecandidato}
+          setSelectedPrecandidato={setSelectedPrecandidato}
+          precandidatosList={precandidatosList}
         />
       </Section>
 
@@ -663,6 +825,10 @@ function PageHome({ filteredTable, loadingData, selectedParties, setSelectedPart
         demoData={demoData}
         adDetailsLoading={adDetailsLoading}
         hasFilters={hasFilters}
+        gastoGenero={gastoGenero}
+        lineMetric={lineMetric}
+        onLineMetricChange={onLineMetricChange}
+        pagePartyMap={pagePartyMap}
       />
       <HomeDatos filteredTable={filteredTable} loadingData={loadingData} />
     </>
@@ -1017,30 +1183,33 @@ function PageEquipo() {
 
 export default function App() {
   const [page, setPage] = useState('home')
-  const [selectedParties,    setSelectedParties]    = useState([])
-  const [selectedEtapa,      setSelectedEtapa]      = useState('Todas')
-  const [selectedTerritorio, setSelectedTerritorio] = useState([])
-  const [tableData,    setTableData]    = useState([])
-  const [loadingData,  setLoadingData]  = useState(true)
-  const [adDetails,    setAdDetails]    = useState(null)
+  const [selectedParties,      setSelectedParties]      = useState([])
+  const [selectedEtapa,        setSelectedEtapa]        = useState('Todas')
+  const [selectedTerritorio,   setSelectedTerritorio]   = useState([])
+  const [selectedDepartamento, setSelectedDepartamento] = useState('Todos')
+  const [selectedPrecandidato, setSelectedPrecandidato] = useState('Todos')
+  const [lineMetric,           setLineMetric]           = useState('anuncios')
+  const [tableData,       setTableData]       = useState([])
+  const [loadingData,     setLoadingData]     = useState(true)
+  const [adDetails,       setAdDetails]       = useState(null)
   const [adDetailsLoading, setAdDetailsLoading] = useState(true)
+
+  // Resetear precandidato al cambiar etapa
+  const handleSetEtapa = (e) => {
+    setSelectedEtapa(e)
+    if (e !== 'Internas') setSelectedPrecandidato('Todos')
+  }
 
   useEffect(() => {
     Promise.all([
       fetch('/data/realData.json').then(r => r.json()),
       fetch('/data/clasificacion.json').then(r => r.json()).catch(() => ({})),
     ]).then(([raw, clasif]) => {
-      console.log('[DATA] raw:', raw?.length, 'clasif keys:', Object.keys(clasif).length)
       const processed = processData(raw)
-      console.log('[DATA] processed:', processed?.length)
       const merged = mergeClasificacion(processed, clasif)
-      console.log('[DATA] merged:', merged?.length)
       setTableData(merged)
       setLoadingData(false)
-    }).catch(err => {
-      console.error('[DATA] Error cargando datos:', err)
-      setLoadingData(false)
-    })
+    }).catch(() => setLoadingData(false))
   }, [])
 
   useEffect(() => {
@@ -1050,11 +1219,14 @@ export default function App() {
       .catch(() => { setAdDetails({}); setAdDetailsLoading(false) })
   }, [])
 
-  // ── Filtrado de tabla ──
-  const filteredTable = useMemo(() => {
+  // ── Mapa page → partido (calculado sobre todos los datos una sola vez) ──
+  const pagePartyMap = useMemo(() => computePagePartyMap(tableData), [tableData])
+
+  // ── Filtrado base (sin filtro de precandidato) ──
+  const filteredBase = useMemo(() => {
     let rows = tableData
     if (selectedParties.length > 0)
-      rows = rows.filter(r => selectedParties.includes(r.part_org) || selectedParties.includes(r.part_org_normalized))
+      rows = rows.filter(r => selectedParties.includes(r.part_org_normalized))
     if (selectedEtapa !== 'Todas')
       rows = rows.filter(r => r.etapa === selectedEtapa)
     if (selectedTerritorio.length > 0) {
@@ -1066,10 +1238,26 @@ export default function App() {
         return false
       })
     }
+    if (selectedDepartamento !== 'Todos')
+      rows = rows.filter(r => r.departamento_nacional === selectedDepartamento)
     return rows
-  }, [tableData, selectedParties, selectedEtapa, selectedTerritorio])
+  }, [tableData, selectedParties, selectedEtapa, selectedTerritorio, selectedDepartamento])
 
-  // ── Datos de clasificación ──
+  // ── Lista de precandidatos disponibles (de filteredBase cuando etapa=Internas) ──
+  const precandidatosList = useMemo(() => {
+    if (selectedEtapa !== 'Internas') return []
+    const set = new Set()
+    filteredBase.forEach(r => { if (r.pre_pres_display) set.add(r.pre_pres_display) })
+    return [...set].sort()
+  }, [filteredBase, selectedEtapa])
+
+  // ── Filtrado final (incluye precandidato) ──
+  const filteredTable = useMemo(() => {
+    if (selectedEtapa !== 'Internas' || selectedPrecandidato === 'Todos') return filteredBase
+    return filteredBase.filter(r => r.pre_pres_display === selectedPrecandidato)
+  }, [filteredBase, selectedPrecandidato, selectedEtapa])
+
+  // ── Datos de clasificación (sobre todos los datos) ──
   const tiposTotales     = useMemo(() => computeTiposTotales(tableData),       [tableData])
   const combinaciones    = useMemo(() => computeCombinaciones(tableData),      [tableData])
   const tiposPorEtapa    = useMemo(() => computeTiposPorEtapa(tableData),      [tableData])
@@ -1078,11 +1266,16 @@ export default function App() {
   const tiposPorTerr     = useMemo(() => computeTiposPorTerritorio(tableData), [tableData])
   const serieTemporal    = useMemo(() => computeSerieTemporal(tableData),      [tableData])
 
+  // ── Datos del home (sobre filteredTable) ──
   const deptData      = useMemo(() => computeDeptDistribution(filteredTable), [filteredTable])
   const filteredStats = useMemo(() => computeFilteredStats(filteredTable),    [filteredTable])
-  const timeSeries    = useMemo(() => computeTimeSeries(filteredTable),       [filteredTable])
+  const timeSeries    = useMemo(() => computeTimeSeries(filteredTable, lineMetric), [filteredTable, lineMetric])
   const demoData      = useMemo(
-    () => adDetails ? computeAggregateDemographics(filteredTable, adDetails) : [],
+    () => adDetails ? computeAggregateDemographicsWithGasto(filteredTable, adDetails) : [],
+    [filteredTable, adDetails]
+  )
+  const gastoGenero = useMemo(
+    () => adDetails ? computeGastoGenero(filteredTable, adDetails) : null,
     [filteredTable, adDetails]
   )
 
@@ -1099,14 +1292,21 @@ export default function App() {
         <PageHome
           filteredTable={filteredTable}
           loadingData={loadingData}
-          selectedParties={selectedParties}       setSelectedParties={setSelectedParties}
-          selectedEtapa={selectedEtapa}           setSelectedEtapa={setSelectedEtapa}
-          selectedTerritorio={selectedTerritorio} setSelectedTerritorio={setSelectedTerritorio}
+          selectedParties={selectedParties}           setSelectedParties={setSelectedParties}
+          selectedEtapa={selectedEtapa}               setSelectedEtapa={handleSetEtapa}
+          selectedTerritorio={selectedTerritorio}     setSelectedTerritorio={setSelectedTerritorio}
+          selectedDepartamento={selectedDepartamento} setSelectedDepartamento={setSelectedDepartamento}
+          selectedPrecandidato={selectedPrecandidato} setSelectedPrecandidato={setSelectedPrecandidato}
+          precandidatosList={precandidatosList}
           deptData={deptData}
           filteredStats={filteredStats}
           timeSeries={timeSeries}
           demoData={demoData}
           adDetailsLoading={adDetailsLoading}
+          gastoGenero={gastoGenero}
+          lineMetric={lineMetric}
+          onLineMetricChange={setLineMetric}
+          pagePartyMap={pagePartyMap}
         />
       )}
       {page === 'metodologia' && <PageMetodologia />}

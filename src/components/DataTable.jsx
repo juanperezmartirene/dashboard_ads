@@ -404,7 +404,12 @@ function AdDetail({ row, layoutId, onClose }) {
             transition={{ delay: 0.25 }}
           >
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-              <FileText className="size-3" /> Texto del anuncio
+              <FileText className="size-3" />
+              {row.tipo === 'video'
+                ? 'Transcripción'
+                : row.tipo === 'imagen'
+                  ? 'Texto reconocido en la imagen'
+                  : 'Cuerpo de la publicación'}
             </p>
             <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto">
               {texto}
