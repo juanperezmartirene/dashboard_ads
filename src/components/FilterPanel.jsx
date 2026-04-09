@@ -13,8 +13,9 @@ export default function FilterPanel({
   selectedDepartamento, setSelectedDepartamento,
   selectedPrecandidato, setSelectedPrecandidato,
   precandidatosList = [],
+  defaultOpen = true,
 }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(defaultOpen)
 
   const toggleParty = (p) =>
     setSelectedParties(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])

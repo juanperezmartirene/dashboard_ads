@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 
 const PAGE_LINKS = [
   { id: 'home',          label: 'Inicio'         },
+  { id: 'comparacion',   label: 'Comparación'    },
   { id: 'clasificacion', label: 'Clasificación'   },
   { id: 'metodologia',   label: 'Metodología'     },
   { id: 'equipo',        label: 'Equipo'          },
@@ -15,6 +16,10 @@ const PAGE_HEROES = {
   home: {
     title: 'Publicidad política digital en Meta durante las elecciones uruguayas 2024',
     sub: 'Análisis de todos los anuncios realizados por cuentas institucionales, partidarias y personales vinculadas a actores políticos en las elecciones presidenciales de 2024',
+  },
+  comparacion: {
+    title: 'Comparación de conjuntos de anuncios',
+    sub: 'Aplicá filtros independientes en cada panel para contrastar partidos, etapas electorales o territorios de forma simultánea.',
   },
   clasificacion: {
     title: 'Clasificación de anuncios · ROUBERTa',
