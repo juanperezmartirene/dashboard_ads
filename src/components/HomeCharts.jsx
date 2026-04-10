@@ -40,34 +40,51 @@ export function AnimatedNumber({ value, format = v => Math.round(v).toLocaleStri
 
 const KPI_ACCENTS = ['#173363', '#0096D1', '#10B981', '#6366F1', '#D97706']
 
-export function HomeKPIs({ stats }) {
+export function HomeKPIs({ stats, compact }) {
   const items = [
-    {
-      label: 'Anuncios',
-      value: stats.totalAnuncios,
-      format: v => Math.round(v).toLocaleString('es-UY'),
-    },
-    {
-      label: 'Gasto estimado',
-      value: stats.totalGasto,
-      format: v => `U$S ${Math.round(v).toLocaleString('es-UY')}`,
-    },
-    {
-      label: 'Impresiones est.',
-      value: stats.totalImp,
-      format: v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : Math.round(v).toLocaleString('es-UY'),
-    },
-    {
-      label: 'Cuentas',
-      value: stats.cuentas,
-      format: v => Math.round(v).toLocaleString('es-UY'),
-    },
-    {
-      label: 'Imp. por dólar',
-      value: stats.impDolar,
-      format: v => Math.round(v).toLocaleString('es-UY'),
-    },
+    { label: 'Anuncios',        value: stats.totalAnuncios, format: v => Math.round(v).toLocaleString('es-UY') },
+    { label: 'Gasto estimado',  value: stats.totalGasto,   format: v => `U$S ${Math.round(v).toLocaleString('es-UY')}` },
+    { label: 'Impresiones est.',value: stats.totalImp,     format: v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : Math.round(v).toLocaleString('es-UY') },
+    { label: 'Cuentas',         value: stats.cuentas,      format: v => Math.round(v).toLocaleString('es-UY') },
+    { label: 'Imp. por dólar',  value: stats.impDolar,     format: v => Math.round(v).toLocaleString('es-UY') },
   ]
+
+  if (compact) {
+    // Fila 1: Anuncios · Cuentas · Imp/dólar  |  Fila 2: Impresiones · Gasto
+    const row1 = [
+      { ...items[0], accent: KPI_ACCENTS[0] },
+      { ...items[3], accent: KPI_ACCENTS[3] },
+      { ...items[4], accent: KPI_ACCENTS[4] },
+    ]
+    const row2 = [
+      { ...items[2], accent: KPI_ACCENTS[2] },
+      { ...items[1], accent: KPI_ACCENTS[1] },
+    ]
+    const Card = ({ k }) => (
+      <div
+        className="bg-white border border-gray-200 rounded-sm px-3 py-2"
+        style={{ borderTop: `2px solid ${k.accent}` }}
+      >
+        <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-0.5 leading-tight truncate">
+          {k.label}
+        </p>
+        <p className="font-mono font-bold text-gray-900 leading-none truncate text-sm">
+          <AnimatedNumber value={k.value} format={k.format} />
+        </p>
+      </div>
+    )
+    return (
+      <div className="flex flex-col gap-2 mb-4">
+        <div className="grid grid-cols-3 gap-2">
+          {row1.map(k => <Card key={k.label} k={k} />)}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {row2.map(k => <Card key={k.label} k={k} />)}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-6">
       {items.map((k, i) => (
@@ -111,7 +128,7 @@ const PARTY_METRICS = [
   { key: 'gasto',       label: 'Gasto',        fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
 ]
 
-export function HomePartyChart({ stats }) {
+export function HomePartyChart({ stats, xDomain }) {
   const [metric, setMetric] = useState('anuncios')
   const metaDef = PARTY_METRICS.find(m => m.key === metric)
   const data = stats.byParty.filter(p => p.anuncios > 0)
@@ -121,6 +138,7 @@ export function HomePartyChart({ stats }) {
   }
 
   const chartHeight = Math.max(80, data.length * 48)
+  const axisDomain = xDomain ? [0, xDomain[metric]] : undefined
 
   return (
     <div>
@@ -152,6 +170,7 @@ export function HomePartyChart({ stats }) {
             tickFormatter={v => metaDef.fmt(v)}
             axisLine={false}
             tickLine={false}
+            domain={axisDomain}
           />
           <YAxis
             type="category"
@@ -291,7 +310,7 @@ const MAP_METRICS = [
   { key: 'gasto',       label: 'Gasto'       },
 ]
 
-export function HomeDeptMap({ data }) {
+export function HomeDeptMap({ data, extMaxVal }) {
   const [geojson, setGeojson]   = useState(null)
   const [metric, setMetric]     = useState('impresiones')
   const [hovered, setHovered]   = useState(null)
@@ -302,20 +321,23 @@ export function HomeDeptMap({ data }) {
 
   const lookup = useMemo(() => {
     if (!data) return {}
-    const maxVal = Math.max(...data.map(d => Number(d[metric]) || 0), 1)
+    const mv = extMaxVal?.[metric] ?? Math.max(...data.map(d => Number(d[metric]) || 0), 1)
     const map = {}
     data.forEach(d => {
       map[d.nombre] = {
-        ratio:       (Number(d[metric]) || 0) / maxVal,
+        ratio:       (Number(d[metric]) || 0) / mv,
         anuncios:    d.anuncios    || 0,
         impresiones: d.impresiones || 0,
         gasto:       d.gasto       || 0,
       }
     })
     return map
-  }, [data, metric])
+  }, [data, metric, extMaxVal])
 
-  const maxVal = useMemo(() => Math.max(...(data || []).map(d => Number(d[metric]) || 0), 1), [data, metric])
+  const maxVal = useMemo(
+    () => extMaxVal?.[metric] ?? Math.max(...(data || []).map(d => Number(d[metric]) || 0), 1),
+    [data, metric, extMaxVal]
+  )
 
   const getFill = (name) => {
     const entry = lookup[name]
@@ -459,11 +481,12 @@ function LineTooltip({ active, payload, label, fmtVal }) {
   )
 }
 
-export function HomeLineChart({ data, metricKey, onMetricChange }) {
+export function HomeLineChart({ data, metricKey, onMetricChange, yMax }) {
   const metaDef = LINE_METRICS.find(m => m.key === metricKey) || LINE_METRICS[0]
   if (!data || data.length === 0) {
     return <p className="text-xs text-gray-400 italic py-4">Sin datos temporales con los filtros actuales.</p>
   }
+  const yDomain = yMax ? [0, yMax] : undefined
   return (
     <div>
       <div className="flex gap-1 mb-3">
@@ -498,6 +521,7 @@ export function HomeLineChart({ data, metricKey, onMetricChange }) {
             axisLine={false}
             tickLine={false}
             width={52}
+            domain={yDomain}
           />
           <RechartTooltip
             content={<LineTooltip fmtVal={metaDef.fmt} />}

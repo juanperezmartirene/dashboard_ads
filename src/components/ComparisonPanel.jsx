@@ -1,5 +1,4 @@
 import FilterPanel from './FilterPanel'
-import { useFilteredData } from '../hooks/useFilteredData'
 import {
   ChartBox,
   HomeKPIs,
@@ -9,15 +8,7 @@ import {
   HomeTop5,
 } from './HomeCharts'
 
-export default function ComparisonPanel({
-  label,
-  accentColor,
-  tableData,
-  adDetails,
-  pagePartyMap,
-}) {
-  const fd = useFilteredData(tableData, adDetails)
-
+export default function ComparisonPanel({ label, accentColor, fd, sharedDomains, pagePartyMap }) {
   return (
     <div className="flex flex-col gap-4">
       {/* Etiqueta del panel */}
@@ -46,29 +37,29 @@ export default function ComparisonPanel({
         selectedPrecandidato={fd.selectedPrecandidato}
         setSelectedPrecandidato={fd.setSelectedPrecandidato}
         precandidatosList={fd.precandidatosList}
-        defaultOpen={false}
+        defaultOpen={true}
       />
 
-      {/* KPIs */}
-      <HomeKPIs stats={fd.filteredStats} />
+      {/* KPIs compactos: 2 filas */}
+      <HomeKPIs stats={fd.filteredStats} compact />
 
-      {/* Anuncios por partido */}
+      {/* Anuncios por partido — escala X compartida */}
       <ChartBox
         title="Anuncios por partido"
         sub="Solo partidos con anuncios según los filtros activos."
       >
-        <HomePartyChart stats={fd.filteredStats} />
+        <HomePartyChart stats={fd.filteredStats} xDomain={sharedDomains.party} />
       </ChartBox>
 
-      {/* Mapa departamental */}
+      {/* Mapa departamental — normalización compartida */}
       <ChartBox
         title="Distribución por departamento"
         sub="Solo anuncios con alcance departamental."
       >
-        <HomeDeptMap data={fd.deptData} />
+        <HomeDeptMap data={fd.deptData} extMaxVal={sharedDomains.dept} />
       </ChartBox>
 
-      {/* Evolución temporal */}
+      {/* Evolución temporal — escala Y compartida si misma métrica */}
       <ChartBox
         title="Evolución temporal de anuncios"
         sub="Publicaciones por semana según los filtros activos."
@@ -77,6 +68,7 @@ export default function ComparisonPanel({
           data={fd.timeSeries}
           metricKey={fd.lineMetric}
           onMetricChange={fd.setLineMetric}
+          yMax={sharedDomains.lineYMax}
         />
       </ChartBox>
 

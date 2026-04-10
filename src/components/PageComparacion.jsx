@@ -1,6 +1,45 @@
+import { useMemo } from 'react'
+import { useFilteredData } from '../hooks/useFilteredData'
 import ComparisonPanel from './ComparisonPanel'
 
 export default function PageComparacion({ tableData, adDetails, pagePartyMap }) {
+  const fdA = useFilteredData(tableData, adDetails)
+  const fdB = useFilteredData(tableData, adDetails)
+
+  // Dominios compartidos para que los gráficos sean comparables entre paneles
+  const sharedDomains = useMemo(() => {
+    // Escala eje X de barras por partido (por cada métrica)
+    const partyAll = [...fdA.filteredStats.byParty, ...fdB.filteredStats.byParty]
+    const party = {
+      anuncios:    Math.max(...partyAll.map(p => p.anuncios    || 0), 1),
+      impresiones: Math.max(...partyAll.map(p => p.impresiones || 0), 1),
+      gasto:       Math.max(...partyAll.map(p => p.gasto       || 0), 1),
+    }
+
+    // Escala del mapa coroplético (por cada métrica)
+    const deptAll = [...fdA.deptData, ...fdB.deptData]
+    const dept = {
+      impresiones: Math.max(...deptAll.map(d => d.impresiones || 0), 1),
+      anuncios:    Math.max(...deptAll.map(d => d.anuncios    || 0), 1),
+      gasto:       Math.max(...deptAll.map(d => d.gasto       || 0), 1),
+    }
+
+    // Escala eje Y del line chart: compartida solo si ambos paneles usan la misma métrica
+    let lineYMax = null
+    if (fdA.lineMetric === fdB.lineMetric) {
+      const maxA = fdA.timeSeries.length ? Math.max(...fdA.timeSeries.map(r => r.total || 0)) : 0
+      const maxB = fdB.timeSeries.length ? Math.max(...fdB.timeSeries.map(r => r.total || 0)) : 0
+      lineYMax = Math.max(maxA, maxB, 1)
+    }
+
+    return { party, dept, lineYMax }
+  }, [
+    fdA.filteredStats.byParty, fdB.filteredStats.byParty,
+    fdA.deptData,              fdB.deptData,
+    fdA.timeSeries,            fdB.timeSeries,
+    fdA.lineMetric,            fdB.lineMetric,
+  ])
+
   return (
     <div
       className="border-t border-gray-100"
@@ -27,15 +66,15 @@ export default function PageComparacion({ tableData, adDetails, pagePartyMap }) 
           <ComparisonPanel
             label="Panel A"
             accentColor="#173363"
-            tableData={tableData}
-            adDetails={adDetails}
+            fd={fdA}
+            sharedDomains={sharedDomains}
             pagePartyMap={pagePartyMap}
           />
           <ComparisonPanel
             label="Panel B"
             accentColor="#0096D1"
-            tableData={tableData}
-            adDetails={adDetails}
+            fd={fdB}
+            sharedDomains={sharedDomains}
             pagePartyMap={pagePartyMap}
           />
         </div>
