@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { useMotionValue, useSpring } from 'motion/react'
 import {
@@ -26,12 +26,14 @@ export function ChartBox({ title, sub, children, gray }) {
 // ─── Número animado ───────────────────────────────────────────────────────────
 
 export function AnimatedNumber({ value, format = v => Math.round(v).toLocaleString('es-UY') }) {
-  const motionVal = useMotionValue(value)
-  const spring    = useSpring(motionVal, { stiffness: 60, damping: 18 })
+  const motionVal  = useMotionValue(value)
+  const spring     = useSpring(motionVal, { stiffness: 80, damping: 20 })
   const [display, setDisplay] = useState(() => format(value))
+  const formatRef  = useRef(format)
+  formatRef.current = format  // siempre actualizado, sin re-suscribir
 
-  useEffect(() => { motionVal.set(value) }, [value, motionVal])
-  useEffect(() => spring.on('change', v => setDisplay(format(v))), [spring, format])
+  useEffect(() => { motionVal.set(value) }, [value])  // anima al nuevo target
+  useEffect(() => spring.on('change', v => setDisplay(formatRef.current(v))), [spring])  // suscripción estable
 
   return <span>{display}</span>
 }
