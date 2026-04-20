@@ -1,26 +1,30 @@
 import FilterPanel from './FilterPanel'
+import DataTable from './DataTable'
 import {
   ChartBox,
   HomeKPIs,
   HomePartyChart,
   HomeDeptMap,
   HomeLineChart,
+  HomeDemoPyramid,
   HomeTop5,
 } from './HomeCharts'
 
-export default function ComparisonPanel({ label, accentColor, fd, sharedDomains, pagePartyMap }) {
+export default function ComparisonPanel({
+  label, accentColor, fd, sharedDomains, pagePartyMap, adDetailsLoading,
+}) {
   return (
     <div className="flex flex-col gap-4">
       {/* Etiqueta del panel */}
       <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
         <span
           className="text-xs font-mono font-bold px-2 py-0.5 rounded-sm"
-          style={{ backgroundColor: accentColor + '18', color: accentColor }}
+          style={{ backgroundColor: accentColor + '22', color: accentColor }}
         >
           {label}
         </span>
         {fd.hasFilters && (
-          <span className="text-xs text-blue-500 font-medium">Filtros activos</span>
+          <span className="text-xs font-medium" style={{ color: accentColor }}>Filtros activos</span>
         )}
       </div>
 
@@ -40,7 +44,7 @@ export default function ComparisonPanel({ label, accentColor, fd, sharedDomains,
         defaultOpen={true}
       />
 
-      {/* KPIs compactos: 2 filas */}
+      {/* KPIs compactos */}
       <HomeKPIs stats={fd.filteredStats} compact />
 
       {/* Anuncios por partido — escala X compartida */}
@@ -72,6 +76,11 @@ export default function ComparisonPanel({ label, accentColor, fd, sharedDomains,
         />
       </ChartBox>
 
+      {/* Demografía */}
+      <ChartBox title="Demografía de audiencia" sub="Edad y género · estimación Meta Ad Library.">
+        <HomeDemoPyramid data={fd.demoData} loading={adDetailsLoading} gastoGenero={fd.gastoGenero} />
+      </ChartBox>
+
       {/* Top 5 cuentas */}
       <ChartBox
         title="Top 5 cuentas"
@@ -79,6 +88,9 @@ export default function ComparisonPanel({ label, accentColor, fd, sharedDomains,
       >
         <HomeTop5 top5={fd.filteredStats.top5} pagePartyMap={pagePartyMap} />
       </ChartBox>
+
+      {/* Tabla de anuncios */}
+      <DataTable data={fd.filteredTable} />
     </div>
   )
 }

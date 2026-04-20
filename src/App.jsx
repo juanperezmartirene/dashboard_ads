@@ -465,52 +465,30 @@ function PageMetodologia() {
 
 const TEAM = [
   {
-    nombre: 'Investigador/a Principal',
-    rol: 'Comunicación política',
-    desc: 'Especialización en publicidad política digital y análisis de campañas electorales en América Latina. Responsable del diseño de la tipología y el etiquetado manual.',
-    area: 'Ciencias Políticas',
+    nombre: 'Juan Pérez Martirene',
+    rol: 'Comunicación política y análisis computacional de texto',
+    area: 'UCU',
   },
   {
-    nombre: 'Investigador/a',
-    rol: 'Análisis computacional de texto',
-    desc: 'Especialización en procesamiento de lenguaje natural y modelos de clasificación para el español. Responsable del entrenamiento y evaluación del modelo ROUBERTa.',
-    area: 'Lingüística Computacional',
+    nombre: 'Investigador 2',
+    rol: 'Análisis electoral y comportamiento político',
+    area: 'UCU',
   },
   {
-    nombre: 'Investigador/a',
-    rol: 'Estudios electorales',
-    desc: 'Especialización en comportamiento electoral y sistemas políticos latinoamericanos. Aporta contexto interpretativo sobre las dinámicas de campaña uruguaya.',
-    area: 'Ciencias Políticas',
-  },
-  {
-    nombre: 'Asistente de investigación',
-    rol: 'Recolección y procesamiento de datos',
-    desc: 'Responsable de la extracción continua de anuncios desde la Meta Ad Library API y el procesamiento del corpus para su análisis.',
-    area: 'Ciencia de Datos',
+    nombre: 'Investigador 3',
+    rol: 'Métodos cuantitativos y estadística',
+    area: 'UCU',
   },
 ]
 
 function PageEquipo() {
   return (
     <Section>
-      <div className="mb-12">
-        <SectionMeta label="El equipo" />
-        <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-          Quiénes somos
-        </h2>
-        <Prose narrow>
-          El equipo es interdisciplinario: reúne especialistas en comunicación
-          política, análisis computacional de texto y estudios electorales. El
-          trabajo forma parte de una agenda de investigación sobre el uso de
-          plataformas digitales en campañas políticas latinoamericanas.
-        </Prose>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-14">
+      <div className="max-w-xl mx-auto flex flex-col gap-3">
         {TEAM.map((m, i) => (
           <div
             key={i}
-            className="border border-gray-200 rounded-sm p-6 bg-white flex items-start gap-4"
+            className="border border-gray-200 rounded-sm p-5 bg-white flex items-center gap-4"
           >
             <div
               className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center"
@@ -521,48 +499,12 @@ function PageEquipo() {
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-1">
-                <p className="text-sm font-semibold text-gray-800">{m.nombre}</p>
-                <span className="text-xs font-mono px-2 py-0.5 bg-gray-100 text-gray-500 rounded-sm shrink-0 ml-3">
-                  {m.area}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5 mb-2">{m.rol}</p>
-              <p className="text-xs text-gray-400 leading-relaxed">{m.desc}</p>
+              <p className="text-sm font-semibold text-gray-800 mb-0.5">{m.nombre}</p>
+              <p className="text-xs text-gray-500">{m.rol}</p>
+              <span className="text-[10px] font-mono" style={{ color: '#0096D1' }}>{m.area}</span>
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Colaboración y contacto */}
-      <div className="border-t border-gray-100 pt-10 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-        <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-            Contexto institucional
-          </h3>
-          <Prose>
-            El proyecto se desarrolla en el marco de una agenda de investigación
-            sobre comunicación política digital en América Latina. Los resultados
-            contribuyen a la comprensión del uso estratégico de plataformas
-            digitales en contextos electorales de la región.
-          </Prose>
-        </div>
-        <div>
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-            Contacto
-          </h3>
-          <Prose>
-            Para consultas sobre el proyecto, el corpus de datos o el modelo de
-            clasificación, contactar al equipo de investigación a través de los
-            canales institucionales correspondientes.
-          </Prose>
-          <div className="mt-5 border-l-2 border-gray-200 pl-4">
-            <p className="text-xs text-gray-400 italic leading-relaxed">
-              Datos del corpus completo con clasificación ROUBERTa.
-              Última actualización: abril 2026.
-            </p>
-          </div>
-        </div>
       </div>
     </Section>
   )
@@ -702,6 +644,7 @@ export default function App() {
         <PageComparacion
           tableData={tableData}
           adDetails={adDetails}
+          adDetailsLoading={adDetailsLoading}
           pagePartyMap={pagePartyMap}
         />
       )}
