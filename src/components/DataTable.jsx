@@ -56,7 +56,7 @@ const PARTIDOS = ['Todos', 'Frente Amplio', 'Partido Nacional', 'Partido Colorad
 const ETAPAS   = ['Todas', 'Internas', 'Nacionales', 'Balotaje']
 
 const COLS = [
-  { key: 'page_name',             label: 'Página',        sortable: true,  width: 'w-48 min-w-[12rem]' },
+  { key: 'page_name',             label: 'Nombre de página', sortable: true,  width: 'w-48 min-w-[12rem]' },
   { key: 'part_org',              label: 'Partido',       sortable: true,  width: 'w-24 min-w-[6rem]'  },
   { key: 'etapa',                 label: 'Elección',      sortable: true  },
   { key: 'departamento_nacional', label: 'Departamento',  sortable: true  },

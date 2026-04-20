@@ -345,7 +345,7 @@ function MetodTipologia() {
           <div
             key={t.tipo}
             className="bg-white rounded-sm border border-gray-200 p-5"
-            style={{ borderTop: `4px solid ${t.color}` }}
+            style={{ borderLeft: `3px solid ${t.color}` }}
           >
             <div className="flex items-start justify-between mb-2">
               <h3 className="text-sm font-semibold text-gray-800">{t.tipo}</h3>
@@ -510,18 +510,26 @@ function PageEquipo() {
         {TEAM.map((m, i) => (
           <div
             key={i}
-            className="border border-gray-200 rounded-sm p-6 bg-white"
+            className="border border-gray-200 rounded-sm p-6 bg-white flex items-start gap-4"
           >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-sm font-semibold text-gray-800">{m.nombre}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{m.rol}</p>
-              </div>
-              <span className="text-xs font-mono px-2 py-0.5 bg-gray-100 text-gray-500 rounded-sm shrink-0 ml-3">
-                {m.area}
+            <div
+              className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center"
+              style={{ backgroundColor: '#173363' }}
+            >
+              <span className="text-base font-bold" style={{ color: '#0096D1' }}>
+                {m.nombre[0]}
               </span>
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between mb-1">
+                <p className="text-sm font-semibold text-gray-800">{m.nombre}</p>
+                <span className="text-xs font-mono px-2 py-0.5 bg-gray-100 text-gray-500 rounded-sm shrink-0 ml-3">
+                  {m.area}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5 mb-2">{m.rol}</p>
+              <p className="text-xs text-gray-400 leading-relaxed">{m.desc}</p>
+            </div>
           </div>
         ))}
       </div>
