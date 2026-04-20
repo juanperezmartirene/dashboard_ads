@@ -44,11 +44,11 @@ const KPI_ACCENTS = ['#173363', '#0096D1', '#10B981', '#6366F1', '#D97706']
 
 export function HomeKPIs({ stats, compact }) {
   const items = [
-    { label: 'Anuncios',        value: stats.totalAnuncios, format: v => Math.round(v).toLocaleString('es-UY') },
-    { label: 'Gasto estimado',  value: stats.totalGasto,   format: v => `U$S ${Math.round(v).toLocaleString('es-UY')}` },
-    { label: 'Impresiones est.',value: stats.totalImp,     format: v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : Math.round(v).toLocaleString('es-UY') },
-    { label: 'Cuentas',         value: stats.cuentas,      format: v => Math.round(v).toLocaleString('es-UY') },
-    { label: 'Imp. por dólar',  value: stats.impDolar,     format: v => Math.round(v).toLocaleString('es-UY') },
+    { label: 'Anuncios',        value: stats.totalAnuncios, format: v => Math.round(v).toLocaleString('es-UY'),                                                             desc: 'Total de anuncios publicados en el período' },
+    { label: 'Gasto estimado',  value: stats.totalGasto,   format: v => `U$S ${Math.round(v).toLocaleString('es-UY')}`,                                                     desc: 'Inversión total estimada por Meta Ad Library' },
+    { label: 'Impresiones est.',value: stats.totalImp,     format: v => v >= 1e6 ? `${(v / 1e6).toFixed(1)} M` : Math.round(v).toLocaleString('es-UY'),                     desc: 'Veces que los anuncios fueron mostrados' },
+    { label: 'Cuentas',         value: stats.cuentas,      format: v => Math.round(v).toLocaleString('es-UY'),                                                              desc: 'Páginas de Facebook o Instagram únicas' },
+    { label: 'Imp. por dólar',  value: stats.impDolar,     format: v => Math.round(v).toLocaleString('es-UY'),                                                              desc: 'Eficiencia media: impresiones por U$S gastado' },
   ]
 
   if (compact) {
@@ -102,6 +102,7 @@ export function HomeKPIs({ stats, compact }) {
           <p className="font-mono font-bold text-gray-900 leading-none truncate" style={{ fontSize: '1.1rem' }}>
             <AnimatedNumber value={k.value} format={k.format} />
           </p>
+          <p className="text-[10px] text-gray-400 leading-snug mt-1.5">{k.desc}</p>
         </motion.div>
       ))}
     </motion.div>

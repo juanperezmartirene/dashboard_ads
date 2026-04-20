@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { BookOpenIcon } from 'lucide-react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 
@@ -53,19 +52,8 @@ export default function Header({ page, onNavigate }) {
       >
         <nav className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 md:px-8">
 
-          {/* Logo */}
-          <button
-            onClick={() => onNavigate('home')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <BookOpenIcon className="size-5" style={{ color: '#0096D1' }} />
-            <span className="font-mono text-sm font-bold text-white tracking-tight">
-              Meta Política UY
-            </span>
-          </button>
-
           {/* Desktop: links */}
-          <div className="hidden items-center gap-1 lg:flex">
+          <div className="hidden items-center gap-1 lg:flex ml-auto">
             {PAGE_LINKS.map(link => (
               <button
                 key={link.id}
@@ -108,11 +96,7 @@ export default function Header({ page, onNavigate }) {
             borderRight: '1px solid rgba(255,255,255,0.1)',
           }}
         >
-          <div className="flex items-center gap-2 mb-8 px-1 pt-2">
-            <BookOpenIcon className="size-5" style={{ color: '#0096D1' }} />
-            <span className="font-mono text-sm font-bold text-white">Meta Política UY</span>
-          </div>
-          <div className="grid gap-y-1">
+          <div className="grid gap-y-1 pt-4">
             {PAGE_LINKS.map(link => (
               <button
                 key={link.id}

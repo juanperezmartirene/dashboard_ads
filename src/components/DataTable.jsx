@@ -32,12 +32,12 @@ const PARTY_COLORS = {
 
 
 const TIPOLOGIA_LABELS = {
-  advocacy:       { label: 'Promoción',  color: '#6366F1' },
-  attack:         { label: 'Ataque',     color: '#EF4444' },
-  image:          { label: 'Imagen',     color: '#F59E0B' },
-  issue:          { label: 'Tema',       color: '#10B981' },
-  call_to_action: { label: 'CTA',        color: '#3B82F6' },
-  ceremonial:     { label: 'Ceremonial', color: '#8B5CF6' },
+  advocacy:       { label: 'Promoción',  color: '#1b9e77' },
+  attack:         { label: 'Ataque',     color: '#d95f02' },
+  image:          { label: 'Imagen',     color: '#66a61e' },
+  issue:          { label: 'Tema',       color: '#e6ab02' },
+  call_to_action: { label: 'CTA',        color: '#7570b3' },
+  ceremonial:     { label: 'Ceremonial', color: '#e7298a' },
 }
 
 const ETAPA_BADGE = {

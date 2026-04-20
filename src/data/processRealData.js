@@ -303,12 +303,12 @@ export function computeTopCuentas(rows) {
 
 // ─── Constantes de tipos de anuncio ─────────────────────────────────────────
 export const TIPOS_META = [
-  { key: 'advocacy',   label: 'Promoción',          color: '#6366F1' },
-  { key: 'cta',        label: 'Llamado a la acción', color: '#3B82F6' },
-  { key: 'issue',      label: 'Tema',                color: '#10B981' },
-  { key: 'image',      label: 'Imagen',              color: '#F59E0B' },
-  { key: 'ceremonial', label: 'Ceremonial',          color: '#8B5CF6' },
-  { key: 'atack',      label: 'Ataque',              color: '#EF4444' },
+  { key: 'advocacy',   label: 'Promoción',          color: '#1b9e77' },
+  { key: 'cta',        label: 'Llamado a la acción', color: '#7570b3' },
+  { key: 'issue',      label: 'Tema',                color: '#e6ab02' },
+  { key: 'image',      label: 'Imagen',              color: '#66a61e' },
+  { key: 'ceremonial', label: 'Ceremonial',          color: '#e7298a' },
+  { key: 'atack',      label: 'Ataque',              color: '#d95f02' },
 ]
 
 // ─── Mergear clasificaciones ─────────────────────────────────────────────────

@@ -288,27 +288,27 @@ function MetodEstudio() {
 
 const TYPE_DEFS = [
   {
-    tipo: 'Promoción', color: '#6366F1', cantidad: 10438, pct: 86.2,
+    tipo: 'Promoción', color: '#1b9e77', cantidad: 10438, pct: 86.2,
     desc: 'Comunica propuestas, logros y atributos positivos del candidato o partido. El emisor se presenta como solución deseable. Es la categoría más frecuente en todas las etapas.',
   },
   {
-    tipo: 'CTA', color: '#3B82F6', cantidad: 7536, pct: 62.3,
+    tipo: 'CTA', color: '#7570b3', cantidad: 7536, pct: 62.3,
     desc: 'Llamado a la acción explícito: votar, compartir, asistir a un acto, seguir en redes. Suele combinar con otras categorías y crece en intensidad hacia el cierre de campaña.',
   },
   {
-    tipo: 'Tema', color: '#10B981', cantidad: 5782, pct: 47.8,
+    tipo: 'Tema', color: '#e6ab02', cantidad: 5782, pct: 47.8,
     desc: 'Posiciona al candidato respecto a un issue específico: seguridad, salud, educación, economía. Permite identificar las agendas temáticas de cada partido.',
   },
   {
-    tipo: 'Imagen', color: '#F59E0B', cantidad: 3226, pct: 26.7,
+    tipo: 'Imagen', color: '#66a61e', cantidad: 3226, pct: 26.7,
     desc: 'Construye la imagen personal del candidato apelando a atributos humanizantes: familia, trayectoria, valores, cercanía. Predomina en las primeras etapas de la campaña.',
   },
   {
-    tipo: 'Ceremonial', color: '#8B5CF6', cantidad: 2131, pct: 17.6,
+    tipo: 'Ceremonial', color: '#e7298a', cantidad: 2131, pct: 17.6,
     desc: 'Vinculado a fechas especiales o efemérides (Día del Trabajo, independencia, etc.). Tono celebratorio y bajo contenido político directo. Refleja presencia continua en el espacio digital.',
   },
   {
-    tipo: 'Ataque', color: '#EF4444', cantidad: 1398, pct: 11.6,
+    tipo: 'Ataque', color: '#d95f02', cantidad: 1398, pct: 11.6,
     desc: 'Crítica o contraste con adversarios: señala aspectos negativos de la oposición, su gestión o sus propuestas. Es la categoría menos frecuente del corpus uruguayo.',
   },
 ]
