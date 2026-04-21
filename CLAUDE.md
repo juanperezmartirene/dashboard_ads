@@ -20,8 +20,8 @@ Dashboard académico para visualizar y analizar **12.096 anuncios políticos uru
 ## Stack técnico
 
 - **React 18 + Vite 5** (JSX, no TypeScript)
-- **Recharts** — gráficos de barras y líneas (reemplazó D3 en Home)
-- **D3.js** — solo usado en componentes legacy (HorizontalBarChart, HeatmapChart, StackedAreaChart)
+- **Recharts** — gráficos de barras y líneas (usado en Home, Comparación)
+- **D3.js** — solo usado en PageTipos (Clasificación) — migración pendiente
 - **Tailwind CSS 3 + shadcn/ui** — estilos y componentes
 - **Lucide React** — iconos
 - **motion (framer-motion)** — animaciones popup en DataTable + AnimatedNumber en KPIs
@@ -90,43 +90,47 @@ SPA por estado (`page` en `App.jsx`), sin router:
 | Footer            | `Footer.jsx`             | OK — Links, metodología, fuente, referencias                                           |
 | FilterPanel       | `FilterPanel.jsx`        | OK — Partido, etapa, territorio, departamento, precandidato (internas). `defaultOpen` |
 | DataTable         | `DataTable.jsx`          | OK — Popup morphing (framer-motion). Link a Meta Ad Library                           |
-| HomeCharts        | `HomeCharts.jsx`         | Módulo con todos los gráficos de Home (ver sub-exports abajo)                         |
+| HomeCharts        | `HomeCharts/` (módulo)   | 4 módulos semánticos: Layout (primitivos), Metrics (KPIs), Charts (Recharts), Demographics (pirámide+top5). Re-exporta todo vía index.js |
 | DemoPyramid       | `DemoPyramid.jsx`        | OK — Pirámide demográfica por edad/género (standalone, usada en HomeDemoPyramid)      |
 | PageComparacion   | `PageComparacion.jsx`    | OK — Dos instancias de useFilteredData + dominios compartidos                         |
 | ComparisonPanel   | `ComparisonPanel.jsx`    | OK — Panel individual para PageComparacion (filtros + KPIs + partido + mapa + línea)  |
 | PageTipos         | `PageTipos.jsx`          | OK — Página completa de clasificación ROUBERTa                                        |
 | MorphingPopover   | `MorphingPopover.jsx`    | Auxiliar para DataTable                                                                |
 | InternasTable     | `InternasTable.jsx`      | OK — Tabla sorteable internas por precandidato                                        |
-| NacionalesBar     | `NacionalesBar.jsx`      | OK — Barras comparativas nacionales por partido                                       |
-| GastoComparativo  | `GastoComparativo.jsx`   | OK — Comparativas de gasto                                                             |
-| TopCuentas        | `TopCuentas.jsx`         | OK (legado, reemplazado en Home por HomeTop5 dentro de HomeCharts)                    |
+| InternasTable     | `InternasTable.jsx`      | OK — Tabla sorteable internas por precandidato                                        |
 
-**Sub-exports de `HomeCharts.jsx`:**
+**Sub-exports de `HomeCharts/` (módulo descompuesto Paso 2):**
 
-| Export            | Descripción                                                              |
-| ----------------- | ------------------------------------------------------------------------ |
-| `ChartBox`        | Wrapper de tarjeta con título/subtítulo para gráficos                   |
-| `AnimatedNumber`  | Número con spring animation (motion/react)                               |
-| `HomeKPIs`        | 5 KPIs (modo normal y compacto 3+2)                                     |
-| `HomePartyChart`  | Barras horizontales por partido (Recharts), selector de métrica          |
-| `HomeDeptMap`     | Mapa coroplético SVG/GeoJSON de Uruguay, selector de métrica             |
-| `HomeLineChart`   | Serie temporal por partido (Recharts), selector de métrica, refs electorales |
-| `HomeDemoPyramid` | Wrapper de DemoPyramid + barras de gasto por género                     |
-| `HomeTop5`        | Top 5 cuentas en tres columnas (anuncios, gasto, impresiones)           |
+| Módulo        | Archivo | Exports |
+| ------------- | ------- | --------|
+| Layout        | `Layout.jsx` | ChartBox (wrapper tarjeta), AnimatedNumber (spring animation) |
+| Metrics       | `Metrics.jsx` | HomeKPIs (5 KPIs, modos normal/compacto 3+2) |
+| Charts        | `Charts.jsx` | HomePartyChart (barras/partido, Recharts), HomeDeptMap (mapa coroplético/geoJSON, Recharts), HomeLineChart (serie temporal, Recharts) |
+| Demographics  | `Demographics.jsx` | HomeDemoPyramid (pirámide demográfica + gasto género), HomeTop5 (ranking 3 columnas) |
 
-### Componentes legacy (activos pero sin uso previsto)
+Re-exporta todo vía `HomeCharts/index.js`; imports en App.jsx y ComparisonPanel.jsx funcionan sin cambios.
+
+### Componentes legacy y deuda técnica
 
 | Componente         | Archivo                    | Nota                                   |
 | ------------------ | -------------------------- | -------------------------------------- |
 | RegionMap          | `RegionMap.jsx`            | En uso en DataTable.jsx; migración a Recharts pendiente |
+| PageTipos          | `PageTipos.jsx`            | Usa D3; migración a Recharts pendiente (tarea separada post-Paso 4) |
+| NacionalesBar      | `NacionalesBar.jsx`        | D3 legacy — **DEAD CODE** (no importado en ningún lado) |
+| GastoComparativo   | `GastoComparativo.jsx`     | D3 legacy — **DEAD CODE** (no importado en ningún lado) |
 
 **Eliminados (Paso 1 refactorización componentes):**
-- HorizontalBarChart.jsx (D3 legacy)
-- StackedAreaChart.jsx (D3 legacy)
-- HeatmapChart.jsx (D3 legacy)
+- HorizontalBarChart.jsx (D3 legacy, no usado)
+- StackedAreaChart.jsx (D3 legacy, no usado)
+- HeatmapChart.jsx (D3 legacy, no usado)
 - KPICards.jsx (reemplazado por HomeKPIs)
 - DepartmentChart.jsx (reemplazado por HomeDeptMap)
 - TopCuentas.jsx (reemplazado por HomeTop5)
+
+**Stack D3 residual (post-Paso 2):**
+- HomeCharts: ✓ **SIN D3** (solo Recharts)
+- PageTipos: ⚠️ Aún usa D3 (migración posterior)
+- vite.config.js: líneas 44-46 mantienen chunking de D3 (aún necesario para PageTipos)
 
 ### Procesamiento de datos (`src/data/processRealData.js`)
 
@@ -213,8 +217,20 @@ scripts_viejos/         — scripts de extracción y procesamiento (Python/R, no
 
 ---
 
-## Pendientes conocidos
+## Refactorización en progreso (Pasos 1-4: Component Modernization)
 
-1. **Componentes legacy** — HorizontalBarChart, StackedAreaChart, HeatmapChart, KPICards, DepartmentChart, TopCuentas, RegionMap: evaluar eliminar o reintegrar
-2. **RegionMap.jsx** — verificar si está en uso o es variante de HomeDeptMap
-3. **Limpiar App.jsx** — el archivo es grande (~700 líneas); PageMetodologia y PageEquipo podrían extraerse
+**Pasos completados:**
+1. ✓ **Paso 1** — Eliminar componentes legacy D3 no usados (6 eliminados: HorizontalBarChart, StackedAreaChart, HeatmapChart, KPICards, DepartmentChart, TopCuentas)
+2. ✓ **Paso 2** — Descomponer HomeCharts.jsx monolítico en 4 módulos semánticos (Layout, Metrics, Charts, Demographics)
+
+**Pasos pendientes:**
+3. **Paso 3** — Verificación de HomeCharts sin D3 + auditoría de residuos (D3 en PageTipos confirmado, aún en package.json)
+   - NacionalesBar y GastoComparativo identificados como dead code
+4. **Paso 4** — Unificar patrón de control de métrica (metric como prop vs useState interno)
+   - Cambio de API que requiere actualizar App.jsx y ComparisonPanel.jsx
+
+**Deuda técnica residual:**
+- RegionMap: en uso en DataTable.jsx; migración a Recharts pendiente (tarea separada post-Paso 4)
+- PageTipos: migración de D3 a Recharts (tarea separada post-Paso 4)
+- NacionalesBar, GastoComparativo: dead code — evaluar eliminar en próxima iteración
+- App.jsx: 669 líneas; PageMetodologia y PageEquipo podrían extraerse (future work)
