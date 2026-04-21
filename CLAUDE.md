@@ -114,16 +114,19 @@ SPA por estado (`page` en `App.jsx`), sin router:
 | `HomeDemoPyramid` | Wrapper de DemoPyramid + barras de gasto por género                     |
 | `HomeTop5`        | Top 5 cuentas en tres columnas (anuncios, gasto, impresiones)           |
 
-### Componentes legacy (no usados)
+### Componentes legacy (activos pero sin uso previsto)
 
 | Componente         | Archivo                    | Nota                                   |
 | ------------------ | -------------------------- | -------------------------------------- |
-| HorizontalBarChart | `HorizontalBarChart.jsx`   | D3 legacy — evaluar eliminar           |
-| StackedAreaChart   | `StackedAreaChart.jsx`     | D3 legacy — evaluar eliminar           |
-| HeatmapChart       | `HeatmapChart.jsx`         | D3 legacy — evaluar eliminar           |
-| KPICards           | `KPICards.jsx`             | Reemplazado por HomeKPIs               |
-| DepartmentChart    | `DepartmentChart.jsx`      | Reemplazado por HomeDeptMap            |
-| RegionMap          | `RegionMap.jsx`            | Mapa alternativo — evaluar si se usa   |
+| RegionMap          | `RegionMap.jsx`            | En uso en DataTable.jsx; migración a Recharts pendiente |
+
+**Eliminados (Paso 1 refactorización componentes):**
+- HorizontalBarChart.jsx (D3 legacy)
+- StackedAreaChart.jsx (D3 legacy)
+- HeatmapChart.jsx (D3 legacy)
+- KPICards.jsx (reemplazado por HomeKPIs)
+- DepartmentChart.jsx (reemplazado por HomeDeptMap)
+- TopCuentas.jsx (reemplazado por HomeTop5)
 
 ### Procesamiento de datos (`src/data/processRealData.js`)
 
