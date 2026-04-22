@@ -15,7 +15,9 @@
       "Bash(git reset *)",
       "Bash(grep -r \"from 'd3'\" src/components/*.jsx)",
       "Bash(grep *)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(start http://localhost:5175)"
     ]
   }
 }

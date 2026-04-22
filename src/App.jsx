@@ -58,7 +58,7 @@ function Prose({ children, narrow }) {
 
 // ─── Sección resultados ───────────────────────────────────────────────────────
 
-function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsLoading, hasFilters, gastoGenero, lineMetric, onLineMetricChange, pagePartyMap }) {
+function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsLoading, hasFilters, gastoGenero, lineMetric, onLineMetricChange, pagePartyMap, partyMetric, setPartyMetric, deptMetric, setDeptMetric, demoMetric, setDemoMetric }) {
   return (
     <Section id="resultados" gray>
       <SectionMeta label="Resultados" />
@@ -167,6 +167,7 @@ function PageHome({
   precandidatosList,
   deptData, filteredStats, timeSeries, demoData, adDetailsLoading,
   gastoGenero, lineMetric, onLineMetricChange, pagePartyMap,
+  partyMetric, setPartyMetric, deptMetric, setDeptMetric, demoMetric, setDemoMetric,
 }) {
   const hasFilters = selectedParties.length > 0 || selectedEtapa !== 'Todas'
     || selectedTerritorio.length > 0 || selectedDepartamento !== 'Todos'
@@ -210,6 +211,12 @@ function PageHome({
         lineMetric={lineMetric}
         onLineMetricChange={onLineMetricChange}
         pagePartyMap={pagePartyMap}
+        partyMetric={partyMetric}
+        setPartyMetric={setPartyMetric}
+        deptMetric={deptMetric}
+        setDeptMetric={setDeptMetric}
+        demoMetric={demoMetric}
+        setDemoMetric={setDemoMetric}
       />
       <HomeDatos filteredTable={filteredTable} loadingData={loadingData} />
     </>
@@ -641,6 +648,12 @@ export default function App() {
           lineMetric={lineMetric}
           onLineMetricChange={setLineMetric}
           pagePartyMap={pagePartyMap}
+          partyMetric={partyMetric}
+          setPartyMetric={setPartyMetric}
+          deptMetric={deptMetric}
+          setDeptMetric={setDeptMetric}
+          demoMetric={demoMetric}
+          setDemoMetric={setDemoMetric}
         />
       )}
       {page === 'comparacion' && (
