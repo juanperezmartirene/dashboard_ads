@@ -14,7 +14,8 @@
       "Bash(git commit *)",
       "Bash(git reset *)",
       "Bash(grep -r \"from 'd3'\" src/components/*.jsx)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(gh pr *)"
     ]
   }
 }
