@@ -7,6 +7,20 @@ Usar mensajes de commit descriptivos en español. Nunca usar `--no-verify`.
 
 ---
 
+## Aprendizajes Arquitectónicos
+
+**Referencia:** [`docs/learnings/ARCHITECTURAL_FOUNDATIONS.md`](docs/learnings/ARCHITECTURAL_FOUNDATIONS.md)
+
+Documento de aprendizajes capturado durante revisión integral (abril 2026):
+- Patrones arquitectónicos aplicados (SPA sin router, custom hooks, lazy loading 2-tier)
+- Decisiones de diseño (color tokens, state management externo, memoización)
+- Anti-patrones identificados y corregidos (props drilling, código duplicado, dead code)
+- Deuda técnica residual (Tier 1, 2, 3 prioridades)
+
+Lectura esencial antes de hacer cambios arquitectónicos o en componentes fundamentales.
+
+---
+
 ## Descripción del proyecto
 
 Dashboard académico para visualizar y analizar **12.096 anuncios políticos uruguayos** publicados en Meta (Facebook e Instagram) durante el ciclo electoral 2023–2024. Clasificados automáticamente con el modelo **ROUBERTa (F1: 0,78)** en 6 tipos funcionales (multi-etiqueta).
