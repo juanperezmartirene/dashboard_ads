@@ -62,6 +62,7 @@ const COLS = [
   { key: 'departamento_nacional', label: 'Departamento',  sortable: true  },
   { key: 'promedio_gasto',        label: 'Gasto',         sortable: true  },
   { key: 'promedio_impresiones',  label: 'Impresiones',   sortable: true  },
+  { key: 'eficiencia',            label: 'Eficiencia',    sortable: true  },
   { key: '_tipologia',            label: 'Clasificación', sortable: false },
 ]
 
@@ -696,6 +697,13 @@ export default function DataTable({ data }) {
                     <TableCell className="text-sm font-mono text-gray-700 whitespace-nowrap">
                       {row.promedio_impresiones > 0
                         ? Math.round(row.promedio_impresiones).toLocaleString('es-UY')
+                        : <span className="text-gray-300">—</span>}
+                    </TableCell>
+
+                    {/* Eficiencia */}
+                    <TableCell className="text-sm font-mono text-gray-700 whitespace-nowrap">
+                      {row.eficiencia > 0
+                        ? row.eficiencia.toLocaleString('es-UY', { maximumFractionDigits: 1 })
                         : <span className="text-gray-300">—</span>}
                     </TableCell>
 
