@@ -40,10 +40,10 @@ export default function InternasTable({ data }) {
   const maxByMetric = useMemo(() => {
     const candidatos = rows.filter(r => !r.isTotal)
     return {
-      anuncios:    Math.max(...candidatos.map(r => r.anuncios)),
-      impresiones: Math.max(...candidatos.map(r => r.impresiones)),
-      gasto:       Math.max(...candidatos.map(r => r.gasto)),
-      imp_dolar:   Math.max(...candidatos.map(r => r.imp_dolar)),
+      anuncios:    Math.max(...candidatos.map(r => r.anuncios || 0), 1),
+      impresiones: Math.max(...candidatos.map(r => r.impresiones || 0), 1),
+      gasto:       Math.max(...candidatos.map(r => r.gasto || 0), 1),
+      imp_dolar:   Math.max(...candidatos.map(r => r.imp_dolar || 0), 1),
     }
   }, [rows])
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
+import { COLORS } from '@/lib/colors'
 
 const PAGE_LINKS = [
   { id: 'home',          label: 'Inicio'         },
@@ -39,7 +40,7 @@ export default function Header({ page, onNavigate }) {
   const hero = PAGE_HEROES[page] || PAGE_HEROES.home
 
   return (
-    <header style={{ backgroundColor: '#173363' }}>
+    <header style={{ backgroundColor: `${COLORS.UCU_DARK}` }}>
       {/* ── Barra de navegación principal ── */}
       <div
         className="sticky top-0 z-50 w-full border-b"
@@ -61,7 +62,7 @@ export default function Header({ page, onNavigate }) {
                 className="px-4 py-2 text-sm font-medium rounded transition-colors hover:bg-white/10"
                 style={
                   page === link.id
-                    ? { backgroundColor: '#0096D1', color: '#fff' }
+                    ? { backgroundColor: `${COLORS.ACENTO_CELESTE}`, color: '#fff' }
                     : { color: 'rgba(255,255,255,0.70)' }
                 }
               >
@@ -104,7 +105,7 @@ export default function Header({ page, onNavigate }) {
                 className="flex items-center w-full px-4 py-3 text-sm font-medium rounded transition-colors text-left hover:bg-white/10"
                 style={
                   page === link.id
-                    ? { backgroundColor: '#0096D1', color: '#fff' }
+                    ? { backgroundColor: `${COLORS.ACENTO_CELESTE}`, color: '#fff' }
                     : { color: 'rgba(255,255,255,0.75)' }
                 }
               >

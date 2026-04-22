@@ -23,6 +23,7 @@ import {
   computeSerieTemporal,
   DEPTO_MAP,
 } from './data/processRealData'
+import { computeFilteredBase, handleEtapaChange } from './data/filters'
 import PageTipos from './components/PageTipos'
 import PageComparacion from './components/PageComparacion'
 
@@ -564,24 +565,14 @@ export default function App() {
   const pagePartyMap = useMemo(() => computePagePartyMap(tableData), [tableData])
 
   // ── Filtrado base (sin filtro de precandidato) ──
+  // Using centralized filtering logic from src/data/filters.js (DRY principle)
   const filteredBase = useMemo(() => {
-    let rows = tableData
-    if (selectedParties.length > 0)
-      rows = rows.filter(r => selectedParties.includes(r.part_org_normalized))
-    if (selectedEtapa !== 'Todas')
-      rows = rows.filter(r => r.etapa === selectedEtapa)
-    if (selectedTerritorio.length > 0) {
-      rows = rows.filter(r => {
-        const d = r.departamento_nacional
-        if (selectedTerritorio.includes('Nacional') && (!d || d === 'Nacional')) return true
-        if (selectedTerritorio.includes('Montevideo') && d === 'Montevideo') return true
-        if (selectedTerritorio.includes('Interior') && d && d !== 'Nacional' && d !== 'Montevideo') return true
-        return false
-      })
-    }
-    if (selectedDepartamento !== 'Todos')
-      rows = rows.filter(r => r.departamento_nacional === selectedDepartamento)
-    return rows
+    return computeFilteredBase(tableData, {
+      selectedParties,
+      selectedEtapa,
+      selectedTerritorio,
+      selectedDepartamento,
+    })
   }, [tableData, selectedParties, selectedEtapa, selectedTerritorio, selectedDepartamento])
 
   // ── Lista de precandidatos disponibles (de filteredBase cuando etapa=Internas) ──

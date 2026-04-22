@@ -415,7 +415,7 @@ export default function PageTipos({
                     {t.key === 'issue' && 'Posiciona al candidato respecto a temas de política pública: seguridad, salud, economía.'}
                     {t.key === 'image' && 'Construye imagen personal del candidato: valores, familia, trayectoria, cercanía.'}
                     {t.key === 'ceremonial' && 'Vinculado a fechas especiales o efemérides. Tono celebratorio, bajo contenido político directo.'}
-                    {t.key === 'atack' && 'Crítica explícita a adversarios. La categoría menos frecuente del corpus uruguayo.'}
+                    {t.key === 'attack' && 'Crítica explícita a adversarios. La categoría menos frecuente del corpus uruguayo.'}
                   </p>
                 </div>
               </div>

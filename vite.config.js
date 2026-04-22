@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import compression from 'vite-plugin-compression'
 
 function serveMediaPlugin() {
   const mediaRoot = path.resolve(__dirname, './dashboard/documentos/media')
@@ -9,7 +10,12 @@ function serveMediaPlugin() {
     name: 'serve-media',
     configureServer(server) {
       server.middlewares.use('/media', (req, res, next) => {
-        const filePath = path.join(mediaRoot, decodeURIComponent(req.url))
+        const filePath = path.resolve(mediaRoot, decodeURIComponent(req.url).replace(/^\/+/, ''))
+        // Security: Reject path traversal attempts (paths outside mediaRoot)
+        if (!filePath.startsWith(mediaRoot)) {
+          next()
+          return
+        }
         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
           res.setHeader('Access-Control-Allow-Origin', '*')
           const ext = path.extname(filePath).toLowerCase()
@@ -28,7 +34,11 @@ function serveMediaPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), serveMediaPlugin()],
+  plugins: [
+    react(),
+    serveMediaPlugin(),
+    compression({ algorithm: 'gzip', ext: '.gz', threshold: 1024 * 100 })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

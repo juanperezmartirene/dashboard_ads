@@ -137,55 +137,6 @@ const PARTY_COLORS = {
   'Otros':            '#6B7280',
 }
 
-// ─── Computar gastos para la página Gastos ──────────────────────────────────
-
-export function computeGastoMeta(rows) {
-  const internas = rows.filter(r => r.etapa === 'Internas')
-  const nacionales = rows.filter(r => r.etapa === 'Nacionales')
-  const ballottage = rows.filter(r => r.etapa === 'Balotaje')
-
-  const sum = (arr, field) => arr.reduce((s, r) => s + (Number(r[field]) || 0), 0)
-
-  return {
-    total_anuncios:      rows.length,
-    anuncios_internas:   internas.length,
-    anuncios_nacionales: nacionales.length,
-    anuncios_balotaje: ballottage.length,
-    gasto_total:         Math.round(sum(rows, 'promedio_gasto')),
-    gasto_internas:      Math.round(sum(internas, 'promedio_gasto')),
-    gasto_nacionales:    Math.round(sum(nacionales, 'promedio_gasto')),
-    imp_total:           Math.round(sum(rows, 'promedio_impresiones')),
-    imp_internas:        Math.round(sum(internas, 'promedio_impresiones')),
-    imp_nacionales:      Math.round(sum(nacionales, 'promedio_impresiones')),
-    cuentas_internas:    new Set(internas.map(r => r.page_id).filter(Boolean)).size,
-    cuentas_nacionales:  new Set(nacionales.map(r => r.page_id).filter(Boolean)).size,
-  }
-}
-
-export function computeGastoPartido(rows) {
-  const parties = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado']
-  return parties.map(p => {
-    const all = rows.filter(r => r.part_org === p)
-    const int = all.filter(r => r.etapa === 'Internas')
-    const nac = all.filter(r => r.etapa === 'Nacionales')
-    const sum = (arr, f) => arr.reduce((s, r) => s + (Number(r[f]) || 0), 0)
-    return {
-      partido: p,
-      short: p,
-      color: PARTY_COLORS[p],
-      anuncios: all.length,
-      anuncios_internas: int.length,
-      anuncios_nacionales: nac.length,
-      gasto_total: Math.round(sum(all, 'promedio_gasto')),
-      gasto_internas: Math.round(sum(int, 'promedio_gasto')),
-      gasto_nacionales: Math.round(sum(nac, 'promedio_gasto')),
-      imp_total: Math.round(sum(all, 'promedio_impresiones')),
-      imp_internas: Math.round(sum(int, 'promedio_impresiones')),
-      imp_nacionales: Math.round(sum(nac, 'promedio_impresiones')),
-    }
-  })
-}
-
 export function computeInternasCandidatos(rows) {
   const internas = rows.filter(r => r.etapa === 'Internas')
   const parties = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
@@ -269,38 +220,6 @@ export function computeNacionalesPartidos(rows) {
   })
 }
 
-export function computeTopCuentas(rows) {
-  const nacionales = rows.filter(r => r.etapa === 'Nacionales')
-
-  // Aggregate by page_name
-  const pageMap = {}
-  nacionales.forEach(r => {
-    const name = r.page_name || 'Desconocido'
-    if (!pageMap[name]) pageMap[name] = { anuncios: 0, gasto: 0, impresiones: 0 }
-    pageMap[name].anuncios++
-    pageMap[name].gasto += Number(r.promedio_gasto) || 0
-    pageMap[name].impresiones += Number(r.promedio_impresiones) || 0
-  })
-
-  const pages = Object.entries(pageMap).map(([nombre, v]) => ({
-    nombre,
-    anuncios: v.anuncios,
-    gasto: Math.round(v.gasto),
-    impresiones: Math.round(v.impresiones),
-  }))
-
-  const topAnuncios = [...pages].sort((a, b) => b.anuncios - a.anuncios).slice(0, 5)
-  const topGasto = [...pages].sort((a, b) => b.gasto - a.gasto).slice(0, 5)
-  const topImp = [...pages].sort((a, b) => b.impresiones - a.impresiones).slice(0, 5)
-
-  return Array.from({ length: 5 }, (_, i) => ({
-    ranking: i + 1,
-    anuncios: topAnuncios[i] ? { nombre: topAnuncios[i].nombre, valor: topAnuncios[i].anuncios } : null,
-    gasto: topGasto[i] ? { nombre: topGasto[i].nombre, valor: topGasto[i].gasto } : null,
-    impresiones: topImp[i] ? { nombre: topImp[i].nombre, valor: topImp[i].impresiones } : null,
-  }))
-}
-
 // ─── Constantes de tipos de anuncio ─────────────────────────────────────────
 export const TIPOS_META = [
   { key: 'advocacy',   label: 'Promoción',          color: '#1b9e77' },
@@ -308,7 +227,7 @@ export const TIPOS_META = [
   { key: 'issue',      label: 'Tema',                color: '#e6ab02' },
   { key: 'image',      label: 'Imagen',              color: '#66a61e' },
   { key: 'ceremonial', label: 'Ceremonial',          color: '#e7298a' },
-  { key: 'atack',      label: 'Ataque',              color: '#d95f02' },
+  { key: 'attack',      label: 'Ataque',              color: '#d95f02' },
 ]
 
 // ─── Mergear clasificaciones ─────────────────────────────────────────────────
@@ -337,14 +256,14 @@ export function computeTiposTotales(rows) {
   }))
 }
 
-// Combinaciones: advocacy/atack × image/issue
+// Combinaciones: advocacy/attack × image/issue
 export function computeCombinaciones(rows) {
   const cr = clasRows(rows)
   return [
     { label: 'Promoción programática', count: cr.filter(r => r._clasi.advocacy === 1 && r._clasi.issue === 1).length, color: '#10B981' },
     { label: 'Promoción de imagen',    count: cr.filter(r => r._clasi.advocacy === 1 && r._clasi.image === 1).length,  color: '#0EA5E9' },
-    { label: 'Ataque programático',    count: cr.filter(r => r._clasi.atack === 1    && r._clasi.issue === 1).length,  color: '#F59E0B' },
-    { label: 'Ataque de imagen',       count: cr.filter(r => r._clasi.atack === 1    && r._clasi.image === 1).length,  color: '#EF4444' },
+    { label: 'Ataque programático',    count: cr.filter(r => r._clasi.attack === 1    && r._clasi.issue === 1).length,  color: '#F59E0B' },
+    { label: 'Ataque de imagen',       count: cr.filter(r => r._clasi.attack === 1    && r._clasi.image === 1).length,  color: '#EF4444' },
   ]
 }
 
@@ -585,25 +504,6 @@ export function computeFilteredStats(rows) {
       impresiones: topImp[i] ? { nombre: topImp[i].nombre, valor: topImp[i].impresiones } : null,
     })),
   }
-}
-
-export function computeHeatmapFromReal(rows) {
-  // Since tipo in real data is 'video'/'imagen'/null (not the ROUBERTa classification),
-  // we compute party × media type instead
-  const parties = ['Partido Nacional', 'Frente Amplio', 'Partido Colorado', 'Otros']
-  return parties.map(p => {
-    const pRows = rows.filter(r => r.part_org_normalized === p)
-    const n = pRows.length
-    const video = pRows.filter(r => r.tipo === 'video').length
-    const imagen = pRows.filter(r => r.tipo === 'imagen').length
-    const sin = pRows.filter(r => !r.tipo).length
-    return {
-      nombre: p,
-      video: n > 0 ? +((video / n) * 100).toFixed(1) : 0,
-      imagen: n > 0 ? +((imagen / n) * 100).toFixed(1) : 0,
-      sin_clasificar: n > 0 ? +((sin / n) * 100).toFixed(1) : 0,
-    }
-  })
 }
 
 // ─── GastoKPIs desde datos reales ───────────────────────────────────────────
