@@ -160,9 +160,16 @@ const MAP_METRICS = [
 export function HomeDeptMap({ data, extMaxVal, metric = 'impresiones', onMetricChange }) {
   const [geojson, setGeojson]   = useState(null)
   const [hovered, setHovered]   = useState(null)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
-    fetch('/data/departamentos.geojson').then(r => r.json()).then(setGeojson).catch(() => {})
+    fetch('/data/departamentos.geojson')
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then(setGeojson)
+      .catch(() => setLoadError(true))
   }, [])
 
   const lookup = useMemo(() => {
@@ -234,7 +241,9 @@ export function HomeDeptMap({ data, extMaxVal, metric = 'impresiones', onMetricC
           </button>
         ))}
       </div>
-      {!geojson ? (
+      {loadError ? (
+        <div className="flex items-center justify-center h-48 text-xs text-gray-400">No se pudo cargar el mapa</div>
+      ) : !geojson ? (
         <div className="flex items-center justify-center h-48 text-xs text-gray-400">Cargando mapa…</div>
       ) : (
         <div className="flex flex-col items-center">

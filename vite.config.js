@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import compression from 'vite-plugin-compression'
 
 function serveMediaPlugin() {
   const mediaRoot = path.resolve(__dirname, './dashboard/documentos/media')
@@ -33,7 +34,11 @@ function serveMediaPlugin() {
 }
 
 export default defineConfig({
-  plugins: [react(), serveMediaPlugin()],
+  plugins: [
+    react(),
+    serveMediaPlugin(),
+    compression({ algorithm: 'gzip', ext: '.gz', threshold: 1024 * 100 })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
