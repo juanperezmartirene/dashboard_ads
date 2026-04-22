@@ -3,6 +3,7 @@
 
 // ─── Mapeo de abreviaciones de departamentos ────────────────────────────────
 export const DEPTO_MAP = {
+  NA: 'Nacional',
   AR: 'Artigas',
   CA: 'Canelones',
   CL: 'Cerro Largo',
