@@ -60,9 +60,7 @@ const DEMO_METRICS = [
   { key: 'gasto',       label: 'Gasto'       },
 ]
 
-export function HomeDemoPyramid({ data, loading, gastoGenero }) {
-  const [metric, setMetric] = useState('impresiones')
-
+export function HomeDemoPyramid({ data, loading, gastoGenero, metric = 'impresiones', onMetricChange }) {
   if (loading) {
     return (
       <div className="space-y-2 py-3">
@@ -89,7 +87,7 @@ export function HomeDemoPyramid({ data, loading, gastoGenero }) {
         {DEMO_METRICS.map(m => (
           <button
             key={m.key}
-            onClick={() => setMetric(m.key)}
+            onClick={() => onMetricChange?.(m.key)}
             className={cn(
               'text-xs px-2.5 py-1 rounded border transition-colors',
               metric === m.key

@@ -14,6 +14,9 @@ export function useFilteredData(tableData, adDetails) {
   const [selectedDepartamento, setSelectedDepartamento] = useState('Todos')
   const [selectedPrecandidato, setSelectedPrecandidato] = useState('Todos')
   const [lineMetric,           setLineMetric]           = useState('anuncios')
+  const [partyMetric,          setPartyMetric]          = useState('anuncios')
+  const [deptMetric,           setDeptMetric]           = useState('impresiones')
+  const [demoMetric,           setDemoMetric]           = useState('impresiones')
 
   const handleSetEtapa = (e) => {
     setSelectedEtapa(e)
@@ -76,6 +79,9 @@ export function useFilteredData(tableData, adDetails) {
     selectedPrecandidato, setSelectedPrecandidato,
     precandidatosList,
     lineMetric,           setLineMetric,
+    partyMetric,          setPartyMetric,
+    deptMetric,           setDeptMetric,
+    demoMetric,           setDemoMetric,
     filteredTable,
     deptData,
     filteredStats,

@@ -27,8 +27,7 @@ const PARTY_METRICS = [
   { key: 'gasto',       label: 'Gasto',        fmt: v => `U$S ${v.toLocaleString('es-UY')}` },
 ]
 
-export function HomePartyChart({ stats, xDomain }) {
-  const [metric, setMetric] = useState('anuncios')
+export function HomePartyChart({ stats, xDomain, metric = 'anuncios', onMetricChange }) {
   const metaDef = PARTY_METRICS.find(m => m.key === metric)
   const data = stats.byParty.filter(p => p.anuncios > 0)
 
@@ -45,7 +44,7 @@ export function HomePartyChart({ stats, xDomain }) {
         {PARTY_METRICS.map(m => (
           <button
             key={m.key}
-            onClick={() => setMetric(m.key)}
+            onClick={() => onMetricChange?.(m.key)}
             className={cn(
               'text-xs px-2.5 py-1 rounded border transition-colors',
               metric === m.key
@@ -158,9 +157,8 @@ const MAP_METRICS = [
   { key: 'gasto',       label: 'Gasto'       },
 ]
 
-export function HomeDeptMap({ data, extMaxVal }) {
+export function HomeDeptMap({ data, extMaxVal, metric = 'impresiones', onMetricChange }) {
   const [geojson, setGeojson]   = useState(null)
-  const [metric, setMetric]     = useState('impresiones')
   const [hovered, setHovered]   = useState(null)
 
   useEffect(() => {
@@ -224,7 +222,7 @@ export function HomeDeptMap({ data, extMaxVal }) {
         {MAP_METRICS.map(m => (
           <button
             key={m.key}
-            onClick={() => setMetric(m.key)}
+            onClick={() => onMetricChange?.(m.key)}
             className={cn(
               'text-xs px-2.5 py-1 rounded border transition-colors',
               metric === m.key
