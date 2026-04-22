@@ -9,7 +9,12 @@ function serveMediaPlugin() {
     name: 'serve-media',
     configureServer(server) {
       server.middlewares.use('/media', (req, res, next) => {
-        const filePath = path.join(mediaRoot, decodeURIComponent(req.url))
+        const filePath = path.resolve(mediaRoot, decodeURIComponent(req.url).replace(/^\/+/, ''))
+        // Security: Reject path traversal attempts (paths outside mediaRoot)
+        if (!filePath.startsWith(mediaRoot)) {
+          next()
+          return
+        }
         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
           res.setHeader('Access-Control-Allow-Origin', '*')
           const ext = path.extname(filePath).toLowerCase()
