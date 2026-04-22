@@ -217,20 +217,60 @@ scripts_viejos/         — scripts de extracción y procesamiento (Python/R, no
 
 ---
 
-## Refactorización en progreso (Pasos 1-4: Component Modernization)
+## Refactorización completada (Pasos 1-4: Component Modernization)
 
-**Pasos completados:**
-1. ✓ **Paso 1** — Eliminar componentes legacy D3 no usados (6 eliminados: HorizontalBarChart, StackedAreaChart, HeatmapChart, KPICards, DepartmentChart, TopCuentas)
-2. ✓ **Paso 2** — Descomponer HomeCharts.jsx monolítico en 4 módulos semánticos (Layout, Metrics, Charts, Demographics)
+**✓ TODOS LOS PASOS COMPLETADOS** — 21 de abril de 2026
 
-**Pasos pendientes:**
-3. **Paso 3** — Verificación de HomeCharts sin D3 + auditoría de residuos (D3 en PageTipos confirmado, aún en package.json)
-   - NacionalesBar y GastoComparativo identificados como dead code
-4. **Paso 4** — Unificar patrón de control de métrica (metric como prop vs useState interno)
-   - Cambio de API que requiere actualizar App.jsx y ComparisonPanel.jsx
+1. ✓ **Paso 1** — Eliminar componentes legacy D3 no usados
+   - Eliminados: HorizontalBarChart, StackedAreaChart, HeatmapChart, KPICards, DepartmentChart, TopCuentas
+   
+2. ✓ **Paso 2** — Descomponer HomeCharts.jsx monolítico en 4 módulos semánticos
+   - **Layout.jsx**: ChartBox, AnimatedNumber
+   - **Metrics.jsx**: HomeKPIs
+   - **Charts.jsx**: HomePartyChart, HomeDeptMap, HomeLineChart
+   - **Demographics.jsx**: HomeDemoPyramid, HomeTop5
+   - Re-exporta todo vía index.js; imports sin cambios
+   
+3. ✓ **Paso 3** — Verificación de HomeCharts sin D3
+   - HomeCharts: ✓ 100% Recharts (sin D3)
+   - PageTipos: ⚠️ aún usa D3 (migración posterior)
+   - NacionalesBar, GastoComparativo: dead code identificado
+   
+4. ✓ **Paso 4** — Unificar patrón de control de métrica
+   - **Patrón nuevo**: metric como prop externa + onMetricChange callback
+   - **Antes**: HomePartyChart, HomeDeptMap, HomeDemoPyramid usaban useState (interno)
+   - **Ahora**: Todos aceptan metric prop (parent-driven), como HomeLineChart
+   - Actualizado: App.jsx, useFilteredData.js, ComparisonPanel.jsx
+
+**Patrón unificado de control de métrica (post-Paso 4):**
+
+Todos los gráficos ahora usan el mismo patrón: **prop-driven external state**.
+
+```jsx
+// Antes (internal state — inconsistente)
+export function HomePartyChart({ stats }) {
+  const [metric, setMetric] = useState('anuncios')  // ❌ estado local
+  // ...
+}
+
+// Después (external state — unificado)
+export function HomePartyChart({ stats, metric = 'anuncios', onMetricChange }) {
+  // ✓ state en parent, props en hijo
+  return <button onClick={() => onMetricChange?.('gasto')} />
+}
+
+// Parent (App.jsx, ComparisonPanel.jsx)
+const [partyMetric, setPartyMetric] = useState('anuncios')
+<HomePartyChart metric={partyMetric} onMetricChange={setPartyMetric} />
+```
+
+**Ventajas:**
+- Componentes sin estado (más testeable, más reutilizable)
+- Sincronización entre paneles (PageComparacion): ambos paneles pueden tener métricas independientes
+- Patrón consistente en todos los gráficos
 
 **Deuda técnica residual:**
-- RegionMap: en uso en DataTable.jsx; migración a Recharts pendiente (tarea separada post-Paso 4)
-- PageTipos: migración de D3 a Recharts (tarea separada post-Paso 4)
+- RegionMap: en uso en DataTable.jsx; migración a Recharts pendiente (futura)
+- PageTipos: migración de D3 a Recharts (futura)
 - NacionalesBar, GastoComparativo: dead code — evaluar eliminar en próxima iteración
 - App.jsx: 669 líneas; PageMetodologia y PageEquipo podrían extraerse (future work)
