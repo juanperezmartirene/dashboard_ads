@@ -308,7 +308,7 @@ export const TIPOS_META = [
   { key: 'issue',      label: 'Tema',                color: '#e6ab02' },
   { key: 'image',      label: 'Imagen',              color: '#66a61e' },
   { key: 'ceremonial', label: 'Ceremonial',          color: '#e7298a' },
-  { key: 'atack',      label: 'Ataque',              color: '#d95f02' },
+  { key: 'attack',      label: 'Ataque',              color: '#d95f02' },
 ]
 
 // ─── Mergear clasificaciones ─────────────────────────────────────────────────
@@ -337,14 +337,14 @@ export function computeTiposTotales(rows) {
   }))
 }
 
-// Combinaciones: advocacy/atack × image/issue
+// Combinaciones: advocacy/attack × image/issue
 export function computeCombinaciones(rows) {
   const cr = clasRows(rows)
   return [
     { label: 'Promoción programática', count: cr.filter(r => r._clasi.advocacy === 1 && r._clasi.issue === 1).length, color: '#10B981' },
     { label: 'Promoción de imagen',    count: cr.filter(r => r._clasi.advocacy === 1 && r._clasi.image === 1).length,  color: '#0EA5E9' },
-    { label: 'Ataque programático',    count: cr.filter(r => r._clasi.atack === 1    && r._clasi.issue === 1).length,  color: '#F59E0B' },
-    { label: 'Ataque de imagen',       count: cr.filter(r => r._clasi.atack === 1    && r._clasi.image === 1).length,  color: '#EF4444' },
+    { label: 'Ataque programático',    count: cr.filter(r => r._clasi.attack === 1    && r._clasi.issue === 1).length,  color: '#F59E0B' },
+    { label: 'Ataque de imagen',       count: cr.filter(r => r._clasi.attack === 1    && r._clasi.image === 1).length,  color: '#EF4444' },
   ]
 }
 
