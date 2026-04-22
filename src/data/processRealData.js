@@ -82,20 +82,25 @@ function normalizeEtapa(te) {
 // ─── Procesar un registro individual ────────────────────────────────────────
 function processRow(row) {
   // Compute midpoints from bounds when promedio fields are null/missing
-  // When upper bound is null (open-ended range like "1M+"), use lower bound only
-  const imp = row.promedio_impresiones != null
+  // When upper bound is null/0/empty (open-ended range like "1M+"), use lower bound only
+  const lowImp = parseFloat(row.impressions_low) || 0
+  const uppImp = parseFloat(row.impressions_upp) || 0
+  const imp = row.promedio_impresiones != null && row.promedio_impresiones > 0
     ? row.promedio_impresiones
-    : row.impressions_low != null
-      ? row.impressions_upp != null
-        ? (row.impressions_low + row.impressions_upp) / 2
-        : row.impressions_low
+    : lowImp > 0
+      ? uppImp > 0 && uppImp !== lowImp
+        ? (lowImp + uppImp) / 2
+        : lowImp  // Use lower bound if upper is 0 or missing (open-ended range)
       : 0
-  const gasto = row.promedio_gasto != null
+
+  const lowGasto = parseFloat(row.spend_low) || parseFloat(row.spend_lower) || 0
+  const uppGasto = parseFloat(row.spend_upp) || parseFloat(row.spend_upper) || 0
+  const gasto = row.promedio_gasto != null && row.promedio_gasto > 0
     ? row.promedio_gasto
-    : row.spend_lower != null
-      ? row.spend_upper != null
-        ? (row.spend_lower + row.spend_upper) / 2
-        : row.spend_lower
+    : lowGasto > 0
+      ? uppGasto > 0 && uppGasto !== lowGasto
+        ? (lowGasto + uppGasto) / 2
+        : lowGasto  // Use lower bound if upper is 0 or missing (open-ended range)
       : 0
 
   // Derivar fecha "YYYY-MM" desde ad_delivery_start_time cuando fecha es null

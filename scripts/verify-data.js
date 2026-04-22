@@ -5,7 +5,7 @@ import { parse } from 'csv-parse/sync'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-const csvFile = fs.readFileSync(path.join(__dirname, '../public/data/BD_ids_texto_completo.csv'), 'utf8')
+const csvFile = fs.readFileSync(path.join(__dirname, '../public/data/BD_v2.csv'), 'utf8')
 const csvRows = parse(csvFile, {
   columns: true,
   skip_empty_lines: true,

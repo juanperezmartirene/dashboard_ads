@@ -14,7 +14,55 @@ function safeParseJSON(str) {
   }
 }
 
-const csvFile = fs.readFileSync(path.join(__dirname, '../public/data/BD_ids_texto_completo.csv'), 'utf8')
+// Calcular promedio correcto de impresiones considerando rangos abiertos
+function calculatePromedioImpresiones(row) {
+  const low = parseFloat(row.impressions_low) || 0
+  const upp = parseFloat(row.impressions_upp) || 0
+
+  // Si low > 0 pero upp es 0, es rango abierto (>X) - SIEMPRE usar solo low
+  // (Ignore CSV's promedio_impresiones in this case as it's incorrect)
+  if (low > 0 && upp === 0) {
+    return low
+  }
+
+  // Si ambos > 0, calcular promedio
+  if (low > 0 && upp > 0) {
+    return (low + upp) / 2
+  }
+
+  // Si ya hay promedio válido y es > 0, usarlo (solo si los ranges no son abiertos)
+  if (row.promedio_impresiones && parseFloat(row.promedio_impresiones) > 0) {
+    return parseFloat(row.promedio_impresiones)
+  }
+
+  return 0
+}
+
+// Calcular promedio correcto de gasto considerando rangos abiertos
+function calculatePromedioGasto(row) {
+  const low = parseFloat(row.spend_low) || 0
+  const upp = parseFloat(row.spend_upp) || 0
+
+  // Si low > 0 pero upp es 0, es rango abierto (>X) - SIEMPRE usar solo low
+  // (Ignore CSV's promedio_gasto in this case as it's incorrect)
+  if (low > 0 && upp === 0) {
+    return low
+  }
+
+  // Si ambos > 0, calcular promedio
+  if (low > 0 && upp > 0) {
+    return (low + upp) / 2
+  }
+
+  // Si ya hay promedio válido y es > 0, usarlo (solo si los ranges no son abiertos)
+  if (row.promedio_gasto && parseFloat(row.promedio_gasto) > 0) {
+    return parseFloat(row.promedio_gasto)
+  }
+
+  return 0
+}
+
+const csvFile = fs.readFileSync(path.join(__dirname, '../public/data/BD_v2.csv'), 'utf8')
 const records = parse(csvFile, {
   columns: true,
   skip_empty_lines: true,
@@ -49,8 +97,8 @@ const anuncios = rows.map(row => ({
     departamento_nacional: row.departamento_nacional,
     fecha: row.fecha,
     dolar_prom: parseFloat(row.dolar_prom) || 0,
-    promedio_impresiones: parseFloat(row.promedio_impresiones) || 0,
-    promedio_gasto: parseFloat(row.promedio_gasto) || 0,
+    promedio_impresiones: calculatePromedioImpresiones(row),
+    promedio_gasto: calculatePromedioGasto(row),
     eficiencia: parseFloat(row.eficiencia) || 0,
     tipo_eleccion: row.tipo_eleccion,
     disclaimer_faltante: row.disclaimer_faltante === 'True',
