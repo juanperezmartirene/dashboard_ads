@@ -210,7 +210,6 @@ scripts_viejos/         — scripts de extracción y procesamiento (Python/R, no
 - Textos en **español (Uruguay)**: separador decimal coma, miles punto (`toLocaleString('es-UY')`)
 - No usar TypeScript — el proyecto es JSX puro
 - No agregar dependencias sin necesidad concreta
-- Estética: sobria, minimalista, académica. Sin gradientes decorativos, sin animaciones innecesarias
 - Tipologías son **multi-etiqueta**: un anuncio puede tener más de un tipo, los % no suman 100%
 - Partidos normalizados: `Frente Amplio`, `Partido Nacional`, `Partido Colorado`, `Otros`
 - Lógica de filtros centralizada en `useFilteredData.js` — no duplicar estado de filtros en componentes
