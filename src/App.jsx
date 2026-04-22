@@ -87,7 +87,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
             title="Anuncios por partido"
             sub="Solo partidos con anuncios según los filtros activos."
           >
-            <HomePartyChart stats={filteredStats} />
+            <HomePartyChart stats={filteredStats} metric={partyMetric} onMetricChange={setPartyMetric} />
           </ChartBox>
         </motion.div>
 
@@ -96,7 +96,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
             title="Distribución por departamento"
             sub="Solo anuncios con alcance departamental."
           >
-            <HomeDeptMap data={deptData} />
+            <HomeDeptMap data={deptData} metric={deptMetric} onMetricChange={setDeptMetric} />
           </ChartBox>
         </motion.div>
       </motion.div>
@@ -116,7 +116,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
             title="Demografía"
             sub="Distribución estimada por edad y género. Ponderado por impresiones o gasto."
           >
-            <HomeDemoPyramid data={demoData} loading={adDetailsLoading} gastoGenero={gastoGenero} />
+            <HomeDemoPyramid data={demoData} loading={adDetailsLoading} gastoGenero={gastoGenero} metric={demoMetric} onMetricChange={setDemoMetric} />
           </ChartBox>
         </motion.div>
 
@@ -520,6 +520,9 @@ export default function App() {
   const [selectedDepartamento, setSelectedDepartamento] = useState('Todos')
   const [selectedPrecandidato, setSelectedPrecandidato] = useState('Todos')
   const [lineMetric,           setLineMetric]           = useState('anuncios')
+  const [partyMetric,          setPartyMetric]          = useState('anuncios')
+  const [deptMetric,           setDeptMetric]           = useState('impresiones')
+  const [demoMetric,           setDemoMetric]           = useState('impresiones')
   const [tableData,       setTableData]       = useState([])
   const [loadingData,     setLoadingData]     = useState(true)
   const [adDetails,       setAdDetails]       = useState(null)

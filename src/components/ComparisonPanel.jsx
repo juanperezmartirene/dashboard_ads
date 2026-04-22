@@ -52,7 +52,7 @@ export default function ComparisonPanel({
         title="Anuncios por partido"
         sub="Solo partidos con anuncios según los filtros activos."
       >
-        <HomePartyChart stats={fd.filteredStats} xDomain={sharedDomains.party} />
+        <HomePartyChart stats={fd.filteredStats} xDomain={sharedDomains.party} metric={fd.partyMetric} onMetricChange={fd.setPartyMetric} />
       </ChartBox>
 
       {/* Mapa departamental — normalización compartida */}
@@ -60,7 +60,7 @@ export default function ComparisonPanel({
         title="Distribución por departamento"
         sub="Solo anuncios con alcance departamental."
       >
-        <HomeDeptMap data={fd.deptData} extMaxVal={sharedDomains.dept} />
+        <HomeDeptMap data={fd.deptData} extMaxVal={sharedDomains.dept} metric={fd.deptMetric} onMetricChange={fd.setDeptMetric} />
       </ChartBox>
 
       {/* Evolución temporal — escala Y compartida si misma métrica */}
@@ -78,7 +78,7 @@ export default function ComparisonPanel({
 
       {/* Demografía */}
       <ChartBox title="Demografía de audiencia" sub="Edad y género · estimación Meta Ad Library.">
-        <HomeDemoPyramid data={fd.demoData} loading={adDetailsLoading} gastoGenero={fd.gastoGenero} />
+        <HomeDemoPyramid data={fd.demoData} loading={adDetailsLoading} gastoGenero={fd.gastoGenero} metric={fd.demoMetric} onMetricChange={fd.setDemoMetric} />
       </ChartBox>
 
       {/* Top 5 cuentas */}
