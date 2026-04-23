@@ -96,13 +96,15 @@ function processRow(row) {
 
   const lowGasto = parseFloat(row.spend_low) || parseFloat(row.spend_lower) || 0
   const uppGasto = parseFloat(row.spend_upp) || parseFloat(row.spend_upper) || 0
-  const gasto = row.promedio_gasto != null && row.promedio_gasto > 0
+  const rawGasto = row.promedio_gasto != null && row.promedio_gasto > 0
     ? row.promedio_gasto
     : lowGasto > 0
       ? uppGasto > 0 && uppGasto !== lowGasto
         ? (lowGasto + uppGasto) / 2
         : lowGasto  // Use lower bound if upper is 0 or missing (open-ended range)
       : 0
+  const dolar = parseFloat(row.dolar_prom) || 1
+  const gasto = row.currency === 'UYU' ? rawGasto / dolar : rawGasto
 
   // Derivar fecha "YYYY-MM" desde ad_delivery_start_time cuando fecha es null
   const fecha = row.fecha || (row.ad_delivery_start_time
