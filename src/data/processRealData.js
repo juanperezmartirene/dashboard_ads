@@ -123,7 +123,7 @@ function processRow(row) {
     part_org_normalized: normalizePartido(row.part_org),
     etapa: normalizeEtapa(row.tipo_eleccion),
     // Campos que DataTable espera (compatibilidad mock → real)
-    _gasto: gasto > 0 ? `U$S ${Math.round(gasto).toLocaleString('es-UY')}` : '—',
+    _gasto: gasto <= 0 ? '—' : gasto < 1 ? '< U$S 1' : `U$S ${Math.round(gasto).toLocaleString('es-UY')}`,
     _impresiones: Math.round(imp),
     // Nombre normalizado del precandidato (solo para internas)
     pre_pres_display: normalizeEtapa(row.tipo_eleccion) === 'Internas'
