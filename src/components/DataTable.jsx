@@ -490,6 +490,7 @@ function AdDetail({ row, layoutId, onClose }) {
 export default function DataTable({ data }) {
   const [sort,        setSort]        = useState({ key: 'page_name', dir: 'asc' })
   const [search,      setSearch]      = useState('')
+  const [idFilter,    setIdFilter]    = useState('')
   const [partido,     setPartido]     = useState('Todos')
   const [etapaFilter, setEtapaFilter] = useState('Todas')
   const [page,        setPage]        = useState(0)
@@ -506,6 +507,11 @@ export default function DataTable({ data }) {
         (r.part_org || '').toLowerCase().includes(q) ||
         (r.pre_pres || '').toLowerCase().includes(q)
       )
+    }
+
+    if (idFilter.trim()) {
+      const q = idFilter.trim()
+      rows = rows.filter(r => String(r.id || '').includes(q))
     }
 
     if (partido !== 'Todos') {
@@ -528,7 +534,7 @@ export default function DataTable({ data }) {
     }
 
     return rows
-  }, [data, search, partido, etapaFilter, sort])
+  }, [data, search, idFilter, partido, etapaFilter, sort])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages - 1)
@@ -539,15 +545,16 @@ export default function DataTable({ data }) {
     setPage(0)
   }
   const handleSearch  = (val) => { setSearch(val); setPage(0) }
+  const handleIdFilter = (val) => { setIdFilter(val.replace(/\D/g, '')); setPage(0) }
   const handlePartido = (val) => { setPartido(val); setPage(0) }
   const handleEtapa   = (val) => { setEtapaFilter(val); setPage(0) }
 
   const reset = () => {
-    setSearch(''); setPartido('Todos'); setEtapaFilter('Todas')
+    setSearch(''); setIdFilter(''); setPartido('Todos'); setEtapaFilter('Todas')
     setSort({ key: 'page_name', dir: 'asc' }); setPage(0)
   }
 
-  const hasFilters = search.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
+  const hasFilters = search.trim() || idFilter.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
 
   const openDetail = (row) => {
     console.log('openDetail called for row:', row.id, row.page_name)
@@ -566,6 +573,13 @@ export default function DataTable({ data }) {
             value={search}
             onChange={e => handleSearch(e.target.value)}
             className="max-w-xs text-sm"
+          />
+          <Input
+            placeholder="Filtrar por ID..."
+            inputMode="numeric"
+            value={idFilter}
+            onChange={e => handleIdFilter(e.target.value)}
+            className="w-40 text-sm"
           />
           <Select value={partido} onValueChange={handlePartido}>
             <SelectTrigger className="w-[180px] text-sm">
