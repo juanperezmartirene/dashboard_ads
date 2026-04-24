@@ -1,9 +1,9 @@
 const LINKS = [
-  { id: 'home',        label: 'Inicio'      },
-  { id: 'gastos',      label: 'Gastos'      },
-  { id: 'tipos',       label: 'Tipos'       },
-  { id: 'metodologia', label: 'Metodología' },
-  { id: 'equipo',      label: 'Equipo'      },
+  { id: 'home',          label: 'Inicio'        },
+  { id: 'comparacion',   label: 'Comparación'   },
+  { id: 'clasificacion', label: 'Clasificación' },
+  { id: 'metodologia',   label: 'Metodología'   },
+  { id: 'equipo',        label: 'Equipo'        },
 ]
 
 export default function Footer({ page, onNavigate }) {

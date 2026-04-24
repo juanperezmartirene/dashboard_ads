@@ -1,0 +1,5 @@
+2026-03-27 20:13:48 INFO: Logging inicializado. Archivo: D:\Proyecto Facebook\Internas\scripts_viejos\data\intermediate\texto_removidos\scraper.log
+2026-03-27 20:13:48 INFO: === INICIO: extracción de texto (removidos por disclaimer) ===
+2026-03-27 20:13:48 INFO: Archivo de entrada: D:\Proyecto Facebook\Internas\scripts_viejos\data\raw\BD_removidos.xlsx
+2026-03-27 20:13:48 INFO: Directorio salida : D:\Proyecto Facebook\Internas\scripts_viejos\data\intermediate\texto_removidos
+2026-03-27 20:13:48 ERROR: Archivo de entrada no encontrado: D:\Proyecto Facebook\Internas\scripts_viejos\data\raw\BD_removidos.xlsx

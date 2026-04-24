@@ -238,10 +238,19 @@ export const TIPOS_META = [
   { key: 'attack',      label: 'Ataque',              color: '#d95f02' },
 ]
 
+function normalizeClasificacion(c) {
+  if (!c) return null
+  return {
+    ...c,
+    attack: c.attack ?? c.atack ?? 0,
+    cta: c.cta ?? c.call_to_action ?? 0,
+  }
+}
+
 // ─── Mergear clasificaciones ─────────────────────────────────────────────────
 export function mergeClasificacion(rows, clasificacion) {
   return rows.map(r => {
-    const c = clasificacion[String(r.id)]
+    const c = normalizeClasificacion(clasificacion[String(r.id)])
     if (!c) return r
     return { ...r, _clasi: c }
   })
@@ -277,7 +286,7 @@ export function computeCombinaciones(rows) {
 
 // Distribución por etapa
 export function computeTiposPorEtapa(rows) {
-  const etapas = ['Internas', 'Nacionales', 'Ballottage']
+  const etapas = ['Internas', 'Nacionales', 'Balotaje']
   return etapas.map(etapa => {
     const etapaRows = clasRows(rows).filter(r => r.etapa === etapa)
     const n = etapaRows.length

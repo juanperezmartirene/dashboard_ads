@@ -13,6 +13,10 @@ const csvRows = parse(csvFile, {
 }).filter(row => row.id && row.id !== 'id')
 
 const jsonFile = JSON.parse(fs.readFileSync(path.join(__dirname, '../public/data/realData.json'), 'utf8'))
+const clasifPath = path.join(__dirname, '../public/data/clasificacion.json')
+const clasificacion = fs.existsSync(clasifPath)
+  ? JSON.parse(fs.readFileSync(clasifPath, 'utf8'))
+  : null
 
 const errors = []
 const warnings = []
@@ -36,6 +40,17 @@ Object.entries(fieldMissing).forEach(([field, count]) => {
     warnings.push(`⚠️  ${count} anuncios sin ${field} (datos incompletos en CSV original)`)
   }
 })
+
+// Verificar que no se publiquen tokens o credenciales en datos estáticos
+let tokenLeaks = 0
+jsonFile.forEach(ad => {
+  Object.values(ad).forEach(value => {
+    if (typeof value === 'string' && value.includes('access_token')) tokenLeaks++
+  })
+})
+if (tokenLeaks > 0) {
+  errors.push(`❌ Se encontraron ${tokenLeaks} campos con access_token en public/data/realData.json`)
+}
 
 // Verificar que text_body === texto_anuncio_completo
 let mismatch = 0
@@ -78,6 +93,19 @@ console.log(`\n📈 Estadísticas:`)
 console.log(`   • Total anuncios: ${jsonFile.length}`)
 console.log(`   • Impresiones totales: ${totalImpresiones.toLocaleString('es-UY')}`)
 console.log(`   • Gasto total: $${totalGasto.toLocaleString('es-UY')}`)
+
+if (clasificacion) {
+  const clasifCount = Object.keys(clasificacion).length
+  const ids = new Set(jsonFile.map(ad => String(ad.id)))
+  const orphanClasif = Object.keys(clasificacion).filter(id => !ids.has(id)).length
+  console.log(`   • Clasificaciones disponibles: ${clasifCount.toLocaleString('es-UY')}`)
+  if (clasifCount !== jsonFile.length) {
+    warnings.push(`⚠️  La clasificación es provisoria/incompleta: ${clasifCount} clasificaciones para ${jsonFile.length} anuncios`)
+  }
+  if (orphanClasif > 0) {
+    warnings.push(`⚠️  ${orphanClasif} clasificaciones no corresponden a IDs de realData.json`)
+  }
+}
 
 if (errors.length > 0) {
   console.log(`\n❌ Errores encontrados:`)

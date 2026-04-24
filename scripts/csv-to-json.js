@@ -14,6 +14,17 @@ function safeParseJSON(str) {
   }
 }
 
+function stripAccessToken(rawUrl) {
+  if (!rawUrl) return rawUrl
+  try {
+    const url = new URL(rawUrl)
+    url.searchParams.delete('access_token')
+    return url.toString()
+  } catch {
+    return String(rawUrl).replace(/([?&])access_token=[^&]+&?/g, '$1').replace(/[?&]$/, '')
+  }
+}
+
 // Calcular promedio correcto de impresiones considerando rangos abiertos
 function calculatePromedioImpresiones(row) {
   const low = parseFloat(row.impressions_low) || 0
@@ -78,7 +89,7 @@ const anuncios = rows.map(row => ({
     ad_delivery_start_time: row.ad_delivery_start_time,
     ad_delivery_stop_time: row.ad_delivery_stop_time,
     bylines: row.bylines,
-    ad_snapshot_url: row.ad_snapshot_url,
+    ad_snapshot_url: stripAccessToken(row.ad_snapshot_url),
     ad_creative_bodies: safeParseJSON(row.ad_creative_bodies),
     currency: row.currency,
     languages: safeParseJSON(row.languages),

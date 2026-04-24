@@ -1,0 +1,12 @@
+2026-03-27 20:17:15 INFO: Logging inicializado. Archivo: D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\texto_recuperado\scraper.log
+2026-03-27 20:17:15 INFO: === INICIO: extracción de texto desde snapshots (BD_totales_elecciones_internas) ===
+2026-03-27 20:17:15 INFO: Archivo de entrada: D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\BD_totales_elecciones_internas.xlsx
+2026-03-27 20:17:15 INFO: Directorio salida : D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\texto_recuperado
+2026-03-27 20:17:15 INFO: Columna de ID: id, Columna de URL: ad_snapshot_url
+2026-03-27 20:17:15 ERROR: Archivo de entrada no encontrado: D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\BD_totales_elecciones_internas.xlsx
+2026-03-27 20:18:41 INFO: Logging inicializado. Archivo: D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\texto_recuperado\scraper.log
+2026-03-27 20:18:41 INFO: === INICIO: extracción de texto desde snapshots (BD_totales_elecciones_internas) ===
+2026-03-27 20:18:41 INFO: Archivo de entrada: D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\BD_totales_elecciones_internas.xlsx
+2026-03-27 20:18:41 INFO: Directorio salida : D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\texto_recuperado
+2026-03-27 20:18:41 INFO: Columna de ID: id, Columna de URL: ad_snapshot_url
+2026-03-27 20:18:41 ERROR: Archivo de entrada no encontrado: D:\Proyecto Facebook\Internas\scripts_viejos\data\processed\BD_totales_elecciones_internas.xlsx

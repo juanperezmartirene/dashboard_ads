@@ -134,7 +134,7 @@ function HomeResumen({ deptData, filteredStats, timeSeries, demoData, adDetailsL
   )
 }
 
-function HomeDatos({ filteredTable, loadingData }) {
+function HomeDatos({ filteredTable, loadingData, dataError }) {
   return (
     <Section id="datos">
       <SectionMeta label="Registro de anuncios" />
@@ -148,6 +148,13 @@ function HomeDatos({ filteredTable, loadingData }) {
             />
             <span className="text-sm text-gray-400">Cargando datos...</span>
           </div>
+        ) : dataError ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
+            <p className="text-sm font-medium text-gray-700">No se pudo cargar la base de anuncios.</p>
+            <p className="text-xs text-gray-400 max-w-md">
+              Revisá que `public/data/realData.json` exista y tenga JSON válido antes de publicar.
+            </p>
+          </div>
         ) : (
           <>
             <DataTable data={filteredTable} />
@@ -159,7 +166,7 @@ function HomeDatos({ filteredTable, loadingData }) {
 }
 
 function PageHome({
-  filteredTable, loadingData,
+  filteredTable, loadingData, dataError,
   selectedParties, setSelectedParties,
   selectedEtapa, setSelectedEtapa,
   selectedTerritorio, setSelectedTerritorio,
@@ -219,7 +226,7 @@ function PageHome({
         demoMetric={demoMetric}
         setDemoMetric={setDemoMetric}
       />
-      <HomeDatos filteredTable={filteredTable} loadingData={loadingData} />
+      <HomeDatos filteredTable={filteredTable} loadingData={loadingData} dataError={dataError} />
     </>
   )
 }
@@ -239,9 +246,9 @@ function MetodEstudio() {
             Este proyecto analiza la publicidad política digital emitida en Meta
             (Facebook e Instagram) durante el ciclo electoral de Uruguay 2024. A
             través de una metodología de clasificación automática, se
-            categorizaron{' '}
-            <strong className="text-gray-800">12.096 anuncios</strong> según su
-            función comunicacional, cubriendo tres etapas electorales: las
+            reunieron{' '}
+            <strong className="text-gray-800">13.310 anuncios</strong> en la
+            segunda iteración de la base, cubriendo tres etapas electorales: las
             elecciones internas de junio, las nacionales de octubre y el
             balotaje de noviembre.
           </Prose>
@@ -378,7 +385,7 @@ function MetodTipologia() {
           Cantidad de anuncios clasificados en cada tipo. Un anuncio puede figurar en más de una categoría.
         </p>
         <p className="text-xs text-gray-400 italic">
-          Clasificación automática multi-etiqueta con ROUBERTa (F1: 0,78) sobre el corpus completo de 12.096 anuncios.
+          Módulo preparado para clasificación automática multi-etiqueta con ROUBERTa. Los valores visibles dependen del archivo de clasificación cargado.
         </p>
       </div>
     </Section>
@@ -386,10 +393,10 @@ function MetodTipologia() {
 }
 
 const TIMELINE = [
-  { label: 'Inicio del período', date: 'Oct 2023',    sub: '12.096 anuncios' },
-  { label: 'Elecciones Internas', date: '30 Jun 2024', sub: '6.192 anuncios'  },
-  { label: 'Elecciones Nacionales', date: '27 Oct 2024', sub: '5.547 anuncios' },
-  { label: 'Balotaje',            date: '24 Nov 2024', sub: '357 anuncios'   },
+  { label: 'Inicio del período', date: 'Oct 2023',    sub: '13.310 anuncios' },
+  { label: 'Elecciones Internas', date: '30 Jun 2024', sub: '6.893 anuncios'  },
+  { label: 'Elecciones Nacionales', date: '27 Oct 2024', sub: '5.989 anuncios' },
+  { label: 'Balotaje',            date: '24 Nov 2024', sub: '428 anuncios'   },
 ]
 
 function MetodCorpus() {
@@ -422,7 +429,7 @@ function MetodCorpus() {
 
         <div className="flex flex-col gap-6 justify-center">
           {[
-            { val: '12.096', label: 'anuncios analizados', sub: 'Oct 2023 – Nov 2024' },
+            { val: '13.310', label: 'anuncios analizados', sub: 'Oct 2023 – Nov 2024' },
             { val: '4',      label: 'partidos políticos',  sub: 'FA · PN · PC · Otros' },
             { val: '3',      label: 'etapas electorales',  sub: 'Internas · Nacionales · Ballottage' },
           ].map(s => (
@@ -533,6 +540,7 @@ export default function App() {
   const [demoMetric,           setDemoMetric]           = useState('impresiones')
   const [tableData,       setTableData]       = useState([])
   const [loadingData,     setLoadingData]     = useState(true)
+  const [dataError,       setDataError]       = useState(null)
   const [adDetails,       setAdDetails]       = useState(null)
   const [adDetailsLoading, setAdDetailsLoading] = useState(true)
 
@@ -543,20 +551,34 @@ export default function App() {
   }
 
   useEffect(() => {
+    const loadJson = (url) =>
+      fetch(url).then(r => {
+        if (!r.ok) throw new Error(`${url} respondió HTTP ${r.status}`)
+        return r.json()
+      })
+
     Promise.all([
-      fetch('/data/realData.json').then(r => r.json()),
-      fetch('/data/clasificacion.json').then(r => r.json()).catch(() => ({})),
+      loadJson('/data/realData.json'),
+      loadJson('/data/clasificacion.json').catch(() => ({})),
     ]).then(([raw, clasif]) => {
       const processed = processData(raw)
       const merged = mergeClasificacion(processed, clasif)
       setTableData(merged)
+      setDataError(null)
       setLoadingData(false)
-    }).catch(() => setLoadingData(false))
+    }).catch((err) => {
+      setDataError(err)
+      setTableData([])
+      setLoadingData(false)
+    })
   }, [])
 
   useEffect(() => {
     fetch('/data/adDetails.json')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`adDetails respondió HTTP ${r.status}`)
+        return r.json()
+      })
       .then(data => { setAdDetails(data); setAdDetailsLoading(false) })
       .catch(() => { setAdDetails({}); setAdDetailsLoading(false) })
   }, [])
@@ -624,6 +646,7 @@ export default function App() {
         <PageHome
           filteredTable={filteredTable}
           loadingData={loadingData}
+          dataError={dataError}
           selectedParties={selectedParties}           setSelectedParties={setSelectedParties}
           selectedEtapa={selectedEtapa}               setSelectedEtapa={handleSetEtapa}
           selectedTerritorio={selectedTerritorio}     setSelectedTerritorio={setSelectedTerritorio}

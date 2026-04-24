@@ -6,9 +6,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select'
-import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
@@ -36,7 +33,7 @@ const TIPOLOGIA_LABELS = {
   attack:         { label: 'Ataque',     color: '#d95f02' },
   image:          { label: 'Imagen',     color: '#66a61e' },
   issue:          { label: 'Tema',       color: '#e6ab02' },
-  call_to_action: { label: 'CTA',        color: '#7570b3' },
+  cta:            { label: 'CTA',        color: '#7570b3' },
   ceremonial:     { label: 'Ceremonial', color: '#e7298a' },
 }
 
@@ -47,8 +44,9 @@ const ETAPA_BADGE = {
 }
 
 function getTipologias(row) {
+  const source = row._clasi ?? row
   return Object.entries(TIPOLOGIA_LABELS)
-    .filter(([key]) => row[key] === 1 || row[key] === '1')
+    .filter(([key]) => source[key] === 1 || source[key] === '1')
     .map(([key, val]) => ({ key, ...val }))
 }
 
@@ -170,6 +168,8 @@ function AdDetail({ row, layoutId, onClose }) {
   }
   const fechaInicio = formatDate(row.ad_delivery_start_time)
   const fechaFin    = formatDate(row.ad_delivery_stop_time)
+  const spendLow = row.spend_low ?? row.spend_lower
+  const spendUpp = row.spend_upp ?? row.spend_upper
 
   return (
     <>
@@ -256,9 +256,9 @@ function AdDetail({ row, layoutId, onClose }) {
               <p className="text-sm font-mono font-semibold text-gray-800 mt-0.5">
                 U$S {Math.round(row.promedio_gasto || 0).toLocaleString('es-UY')}
               </p>
-              {(row.spend_lower != null || row.spend_upper != null) && (
+              {(spendLow != null || spendUpp != null) && (
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Rango: ${row.spend_lower ?? '?'}–${row.spend_upper ?? '?'}
+                  Rango: ${spendLow ?? '?'}–${spendUpp ?? '?'}
                 </p>
               )}
             </div>
@@ -490,7 +490,6 @@ function AdDetail({ row, layoutId, onClose }) {
 export default function DataTable({ data }) {
   const [sort,        setSort]        = useState({ key: 'page_name', dir: 'asc' })
   const [search,      setSearch]      = useState('')
-  const [idFilter,    setIdFilter]    = useState('')
   const [partido,     setPartido]     = useState('Todos')
   const [etapaFilter, setEtapaFilter] = useState('Todas')
   const [page,        setPage]        = useState(0)
@@ -502,16 +501,12 @@ export default function DataTable({ data }) {
     if (search.trim()) {
       const q = search.toLowerCase()
       rows = rows.filter(r =>
+        String(r.id || '').includes(q) ||
         (r.page_name || '').toLowerCase().includes(q) ||
         (r.text_body || r.texto_anuncio_completo || '').toLowerCase().includes(q) ||
         (r.part_org || '').toLowerCase().includes(q) ||
         (r.pre_pres || '').toLowerCase().includes(q)
       )
-    }
-
-    if (idFilter.trim()) {
-      const q = idFilter.trim()
-      rows = rows.filter(r => String(r.id || '').includes(q))
     }
 
     if (partido !== 'Todos') {
@@ -534,7 +529,7 @@ export default function DataTable({ data }) {
     }
 
     return rows
-  }, [data, search, idFilter, partido, etapaFilter, sort])
+  }, [data, search, partido, etapaFilter, sort])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages - 1)
@@ -545,19 +540,17 @@ export default function DataTable({ data }) {
     setPage(0)
   }
   const handleSearch  = (val) => { setSearch(val); setPage(0) }
-  const handleIdFilter = (val) => { setIdFilter(val.replace(/\D/g, '')); setPage(0) }
   const handlePartido = (val) => { setPartido(val); setPage(0) }
   const handleEtapa   = (val) => { setEtapaFilter(val); setPage(0) }
 
   const reset = () => {
-    setSearch(''); setIdFilter(''); setPartido('Todos'); setEtapaFilter('Todas')
+    setSearch(''); setPartido('Todos'); setEtapaFilter('Todas')
     setSort({ key: 'page_name', dir: 'asc' }); setPage(0)
   }
 
-  const hasFilters = search.trim() || idFilter.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
+  const hasFilters = search.trim() || partido !== 'Todos' || etapaFilter !== 'Todas'
 
   const openDetail = (row) => {
-    console.log('openDetail called for row:', row.id, row.page_name)
     setSelected({ row, layoutId: `ad-expand-${row.id}` })
   }
   const closeDetail = () => setSelected(null)
@@ -574,33 +567,26 @@ export default function DataTable({ data }) {
             onChange={e => handleSearch(e.target.value)}
             className="max-w-xs text-sm"
           />
-          <Input
-            placeholder="Filtrar por ID..."
-            inputMode="numeric"
-            value={idFilter}
-            onChange={e => handleIdFilter(e.target.value)}
-            className="w-40 text-sm"
-          />
-          <Select value={partido} onValueChange={handlePartido}>
-            <SelectTrigger className="w-[180px] text-sm">
-              <SelectValue placeholder="Partido" />
-            </SelectTrigger>
-            <SelectContent>
-              {PARTIDOS.map(p => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={etapaFilter} onValueChange={handleEtapa}>
-            <SelectTrigger className="w-[160px] text-sm">
-              <SelectValue placeholder="Tipo elección" />
-            </SelectTrigger>
-            <SelectContent>
-              {ETAPAS.map(e => (
-                <SelectItem key={e} value={e}>{e}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            value={partido}
+            onChange={e => handlePartido(e.target.value)}
+            className="w-[180px] text-sm border border-gray-200 rounded-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
+            aria-label="Filtrar tabla por partido"
+          >
+            {PARTIDOS.map(p => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+          <select
+            value={etapaFilter}
+            onChange={e => handleEtapa(e.target.value)}
+            className="w-[160px] text-sm border border-gray-200 rounded-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:border-sky-400 transition-colors"
+            aria-label="Filtrar tabla por etapa electoral"
+          >
+            {ETAPAS.map(e => (
+              <option key={e} value={e}>{e}</option>
+            ))}
+          </select>
           {hasFilters && (
             <Button variant="outline" size="sm" onClick={reset} className="text-xs">
               Limpiar filtros

@@ -33,11 +33,27 @@ function serveMediaPlugin() {
   }
 }
 
+function removeRawDataPlugin() {
+  return {
+    name: 'remove-raw-data-from-build',
+    closeBundle() {
+      const files = [
+        path.resolve(__dirname, './dist/data/BD_v2.csv'),
+        path.resolve(__dirname, './dist/data/BD_v2.csv.gz'),
+      ]
+      files.forEach(file => {
+        if (fs.existsSync(file)) fs.rmSync(file)
+      })
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     react(),
     serveMediaPlugin(),
-    compression({ algorithm: 'gzip', ext: '.gz', threshold: 1024 * 100 })
+    compression({ algorithm: 'gzip', ext: '.gz', threshold: 1024 * 100 }),
+    removeRawDataPlugin(),
   ],
   resolve: {
     alias: {

@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 dashboard
+public/data/BD_v2.csv

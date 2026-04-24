@@ -23,7 +23,7 @@ const PAGE_HEROES = {
   },
   clasificacion: {
     title: 'Clasificación de anuncios · ROUBERTa',
-    sub: 'Clasificación de 12.096 anuncios en seis categorías funcionales mediante aprendizaje automático supervisado. Distribución por etapa electoral, partido político y alcance territorial.',
+    sub: 'Módulo preparado para cargar clasificaciones multi-etiqueta en seis categorías funcionales. Los resultados actuales dependen del archivo de clasificación disponible.',
   },
   metodologia: {
     title: 'Metodología',

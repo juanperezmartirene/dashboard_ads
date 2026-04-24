@@ -219,5 +219,6 @@ Deuda tecnica prioritaria:
 Leer tambien:
 
 - `docs/learnings/ARCHITECTURAL_FOUNDATIONS.md`
+- `docs/production-fixes-2026-04-24.md`
 
 Es lectura recomendada para cambios estructurales, refactors grandes o decisiones de arquitectura.
