@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { useClickOutside } from '@/hooks/use-click-outside'
 import DemoPyramid from '@/components/DemoPyramid'
 import RegionMap from '@/components/RegionMap'
+import { loadAdBreakdown, loadAdDetailRow } from '@/data/dataArtifacts'
 
 const SPRING = { type: 'spring', bounce: 0.1, duration: 0.4 }
 
@@ -68,31 +69,42 @@ const PAGE_SIZE = 20
 
 // ── Lazy-load adDetails.json (singleton) ──────────────────────────────────────
 
-let _adDetailsCache = null
-let _adDetailsPromise = null
-
-function loadAdDetails() {
-  if (_adDetailsCache) return Promise.resolve(_adDetailsCache)
-  if (!_adDetailsPromise) {
-    _adDetailsPromise = fetch('/data/adDetails.json')
-      .then(r => r.json())
-      .then(data => { _adDetailsCache = data; return data })
-      .catch(() => { _adDetailsCache = {}; return {} })
-  }
-  return _adDetailsPromise
-}
-
 function useAdDetails(adId) {
   const [details, setDetails] = useState(null)
 
   useEffect(() => {
     if (!adId) { setDetails(null); return }
-    loadAdDetails().then(data => {
-      setDetails(data[String(adId)] || null)
-    })
+    const controller = new AbortController()
+    setDetails(null)
+    loadAdBreakdown(adId, { signal: controller.signal })
+      .then(data => {
+        if (!controller.signal.aborted) setDetails(data || null)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setDetails(null)
+      })
+    return () => controller.abort()
   }, [adId])
 
   return details
+}
+
+function useFullAdRow(row) {
+  const [fullRow, setFullRow] = useState(row)
+
+  useEffect(() => {
+    if (!row?.id) { setFullRow(row); return }
+    const controller = new AbortController()
+    setFullRow(row)
+    loadAdDetailRow(row.id, { signal: controller.signal })
+      .then(data => {
+        if (!controller.signal.aborted && data) setFullRow({ ...row, ...data })
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [row])
+
+  return fullRow
 }
 
 // ── Morphing Ad Detail Dialog ─────────────────────────────────────────────────
@@ -140,9 +152,10 @@ function useAdMedia(adId) {
   return media
 }
 
-function AdDetail({ row, layoutId, onClose }) {
+function AdDetail({ row: initialRow, layoutId, onClose }) {
   const ref = useRef(null)
   useClickOutside(ref, onClose)
+  const row = useFullAdRow(initialRow)
 
   // Cerrar con Escape
   useEffect(() => {

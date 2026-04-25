@@ -17,6 +17,11 @@ const clasifPath = path.join(__dirname, '../public/data/clasificacion.json')
 const clasificacion = fs.existsSync(clasifPath)
   ? JSON.parse(fs.readFileSync(clasifPath, 'utf8'))
   : null
+const runtimeDir = path.join(__dirname, '../public/data/runtime')
+const adsIndexPath = path.join(runtimeDir, 'ads.index.json')
+const adDemoIndexPath = path.join(runtimeDir, 'ad-demographics.index.json')
+const adsManifestPath = path.join(runtimeDir, 'ads.manifest.json')
+const adDetailsManifestPath = path.join(runtimeDir, 'ad-details.manifest.json')
 
 const errors = []
 const warnings = []
@@ -105,6 +110,45 @@ if (clasificacion) {
   if (orphanClasif > 0) {
     warnings.push(`⚠️  ${orphanClasif} clasificaciones no corresponden a IDs de realData.json`)
   }
+}
+
+// Verificar artefactos runtime livianos/shardeados
+if (!fs.existsSync(adsIndexPath)) {
+  errors.push(`❌ Falta public/data/runtime/ads.index.json. Ejecutá npm.cmd run prepare-data`)
+} else {
+  const adsIndex = JSON.parse(fs.readFileSync(adsIndexPath, 'utf8'))
+  if (!Array.isArray(adsIndex) || adsIndex.length !== jsonFile.length) {
+    errors.push(`❌ ads.index.json no coincide con realData.json (${adsIndex.length} vs ${jsonFile.length})`)
+  }
+
+  let runtimeTokenLeaks = 0
+  adsIndex.forEach(ad => {
+    Object.values(ad).forEach(value => {
+      if (typeof value === 'string' && value.includes('access_token')) runtimeTokenLeaks++
+    })
+  })
+  if (runtimeTokenLeaks > 0) {
+    errors.push(`❌ Se encontraron ${runtimeTokenLeaks} campos con access_token en public/data/runtime/ads.index.json`)
+  }
+
+  const rawSize = fs.statSync(path.join(__dirname, '../public/data/realData.json')).size
+  const indexSize = fs.statSync(adsIndexPath).size
+  console.log(`   • Índice runtime: ${(indexSize / 1024 / 1024).toFixed(2)} MB (${((1 - indexSize / rawSize) * 100).toFixed(1)}% menos que realData.json)`)
+}
+
+if (!fs.existsSync(adsManifestPath)) {
+  errors.push(`❌ Falta public/data/runtime/ads.manifest.json`)
+}
+
+if (!fs.existsSync(adDetailsManifestPath)) {
+  errors.push(`❌ Falta public/data/runtime/ad-details.manifest.json`)
+}
+
+if (fs.existsSync(adDemoIndexPath)) {
+  const demoIndex = JSON.parse(fs.readFileSync(adDemoIndexPath, 'utf8'))
+  console.log(`   • Índice demográfico runtime: ${Object.keys(demoIndex).length.toLocaleString('es-UY')} anuncios`)
+} else {
+  warnings.push(`⚠️  Falta public/data/runtime/ad-demographics.index.json; los gráficos demográficos no tendrán datos`)
 }
 
 if (errors.length > 0) {

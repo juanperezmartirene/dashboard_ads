@@ -143,3 +143,112 @@ Prioridad para agregar:
 - Test de `verify-data` para impedir `access_token`.
 - Smoke e2e de navegación Header/Footer.
 - Smoke de tabla: tipologías visibles, búsqueda, filtro, modal.
+
+## Arquitectura de datos runtime - 2026-04-24
+
+El cuello principal era `public/data/realData.json`: ronda los 86 MB sin gzip,
+y `public/data/adDetails.json` rondaba los 13,9 MB. Se implementó una capa de
+artefactos runtime generados, sin borrar las fuentes.
+
+### Auditoría de campos
+
+`realData.json` se usa en runtime para:
+
+- filtros globales: `part_org`, `tipo_eleccion`, `departamento_nacional`,
+  `pre_pres`;
+- tabla y búsqueda: `id`, `page_id`, `page_name`, fechas, partido,
+  departamento, rangos de gasto/impresiones, `text_body`, clasificación;
+- charts de Home, Comparación y Clasificación: etapa, partido, departamento,
+  fecha, `promedio_impresiones`, `promedio_gasto`, `eficiencia`;
+- modal: texto, plataformas, fechas, rangos, sector/lista, tipo y metadatos.
+
+`adDetails.json` se usa para:
+
+- Home y Comparación: solo `demo`, agregado por los filtros activos;
+- modal: `demo` y `region` del anuncio abierto.
+
+`clasificacion.json` se usa para mergear `_clasi` por `id` con las claves
+`advocacy`, `attack/atack`, `image`, `issue`, `cta/call_to_action` y
+`ceremonial`.
+
+### Nueva estructura
+
+El script `scripts/build-data-artifacts.js` genera:
+
+```text
+public/data/runtime/
+  ads.index.json                 # índice inicial para UI, filtros, tabla y charts
+  ad-demographics.index.json     # demo por anuncio para agregados demográficos
+  ads.manifest.json              # id -> shard de detalle de anuncio
+  ad-details.manifest.json       # id -> shard demográfico/regional
+  meta.json                      # conteos y campos incluidos
+  ads/00.json ... 99.json        # detalle completo de anuncios por shard
+  ad-details/00.json ... 99.json # demo + región por shard
+```
+
+El índice inicial pesa aproximadamente `23,38 MB`, un `71,4%` menos que
+`realData.json`. Los archivos pesados completos se mantienen regenerables desde
+las fuentes y se sirven en shards chicos. El modal carga el shard del anuncio
+recién al abrirse, con cache singleton en memoria y protección contra carreras
+al desmontar/cambiar de anuncio.
+
+### Scripts
+
+```bash
+npm.cmd run prepare-data
+npm.cmd run verify-data
+npm.cmd run build
+```
+
+- `prepare-data`: genera los artefactos runtime.
+- `preverify-data` y `prebuild`: regeneran los artefactos automáticamente antes
+  de verificar o compilar.
+- `verify-data`: valida fuentes, clasificación provisoria, ausencia de
+  `access_token` y consistencia básica de los artefactos.
+
+### Deploy
+
+`vite.config.js` elimina del `dist`:
+
+- `data/BD_v2.csv`
+- `data/realData.json`
+- `data/adDetails.json`
+- `data/clasificacion.json`
+- sus `.gz`
+
+El runtime usa solo `public/data/runtime/**` y `departamentos.geojson`.
+
+### Cómo regenerar y cargar clasificación final
+
+1. Si cambia el CSV crudo local, correr:
+
+```bash
+npm.cmd run convert-data
+```
+
+2. Reemplazar `public/data/clasificacion.json` por la clasificación final.
+   Conviene normalizar claves a `attack` y `cta`.
+3. Regenerar artefactos:
+
+```bash
+npm.cmd run prepare-data
+npm.cmd run verify-data
+npm.cmd run build
+```
+
+`clasificacion.json` queda como fuente para regenerar, pero no se publica como
+archivo runtime independiente porque sus valores ya quedan integrados en
+`ads.index.json` y los shards de `ads/`.
+
+### Tradeoffs y pendientes
+
+- Se conserva la capacidad de ver todos los datos, pero el detalle completo vive
+  en shards estáticos; no se agregó backend.
+- Los charts demográficos todavía cargan un índice global de `demo`
+  (`~9,62 MB`) para mantener filtros instantáneos. Precálculo por combinaciones
+  o Web Worker queda como mejora futura si el dataset crece.
+- No se precalcularon todos los agregados de Home/Clasificación porque la UI
+  permite combinaciones libres de filtros; aplicarlo ahora aumentaría riesgo de
+  inconsistencias.
+- Fotos y videos siguen pendientes para producción: conviene mover media a CDN
+  u object storage, generar thumbnails y cargar videos solo bajo demanda.

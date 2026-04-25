@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/build-data-artifacts.js",
     "build": "vite build",
     "preview": "vite preview",
     "convert-data": "node scripts/csv-to-json.js",
+    "prepare-data": "node scripts/build-data-artifacts.js",
+    "preverify-data": "node scripts/build-data-artifacts.js",
     "verify-data": "node scripts/verify-data.js"
   },
   "dependencies": {

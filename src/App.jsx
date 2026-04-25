@@ -24,6 +24,7 @@ import {
   DEPTO_MAP,
 } from './data/processRealData'
 import { computeFilteredBase, handleEtapaChange } from './data/filters'
+import { loadAdsIndex, loadAdDemographicsIndex } from './data/dataArtifacts'
 import PageTipos from './components/PageTipos'
 import PageComparacion from './components/PageComparacion'
 
@@ -152,7 +153,7 @@ function HomeDatos({ filteredTable, loadingData, dataError }) {
           <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
             <p className="text-sm font-medium text-gray-700">No se pudo cargar la base de anuncios.</p>
             <p className="text-xs text-gray-400 max-w-md">
-              Revisá que `public/data/realData.json` exista y tenga JSON válido antes de publicar.
+              Revisá que `public/data/runtime/ads.index.json` exista y tenga JSON válido antes de publicar.
             </p>
           </div>
         ) : (
@@ -551,36 +552,50 @@ export default function App() {
   }
 
   useEffect(() => {
+    const controller = new AbortController()
     const loadJson = (url) =>
-      fetch(url).then(r => {
+      fetch(url, { signal: controller.signal }).then(r => {
         if (!r.ok) throw new Error(`${url} respondió HTTP ${r.status}`)
         return r.json()
       })
 
-    Promise.all([
-      loadJson('/data/realData.json'),
-      loadJson('/data/clasificacion.json').catch(() => ({})),
-    ]).then(([raw, clasif]) => {
-      const processed = processData(raw)
-      const merged = mergeClasificacion(processed, clasif)
-      setTableData(merged)
+    loadAdsIndex({ signal: controller.signal }).catch(async () => {
+      const [raw, clasif] = await Promise.all([
+        loadJson('/data/realData.json'),
+        loadJson('/data/clasificacion.json').catch(() => ({})),
+      ])
+      return mergeClasificacion(processData(raw), clasif)
+    }).then((rows) => {
+      if (controller.signal.aborted) return
+      setTableData(rows)
       setDataError(null)
       setLoadingData(false)
     }).catch((err) => {
+      if (controller.signal.aborted) return
       setDataError(err)
       setTableData([])
       setLoadingData(false)
     })
+
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
-    fetch('/data/adDetails.json')
-      .then(r => {
-        if (!r.ok) throw new Error(`adDetails respondió HTTP ${r.status}`)
-        return r.json()
+    const controller = new AbortController()
+    loadAdDemographicsIndex({ signal: controller.signal })
+      .then(data => {
+        if (!controller.signal.aborted) {
+          setAdDetails(data)
+          setAdDetailsLoading(false)
+        }
       })
-      .then(data => { setAdDetails(data); setAdDetailsLoading(false) })
-      .catch(() => { setAdDetails({}); setAdDetailsLoading(false) })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setAdDetails({})
+          setAdDetailsLoading(false)
+        }
+      })
+    return () => controller.abort()
   }, [])
 
   // ── Mapa page → partido (calculado sobre todos los datos una sola vez) ──

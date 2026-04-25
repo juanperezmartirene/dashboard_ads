@@ -40,6 +40,12 @@ function removeRawDataPlugin() {
       const files = [
         path.resolve(__dirname, './dist/data/BD_v2.csv'),
         path.resolve(__dirname, './dist/data/BD_v2.csv.gz'),
+        path.resolve(__dirname, './dist/data/realData.json'),
+        path.resolve(__dirname, './dist/data/realData.json.gz'),
+        path.resolve(__dirname, './dist/data/adDetails.json'),
+        path.resolve(__dirname, './dist/data/adDetails.json.gz'),
+        path.resolve(__dirname, './dist/data/clasificacion.json'),
+        path.resolve(__dirname, './dist/data/clasificacion.json.gz'),
       ]
       files.forEach(file => {
         if (fs.existsSync(file)) fs.rmSync(file)
