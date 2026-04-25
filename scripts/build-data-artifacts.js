@@ -30,6 +30,12 @@ const INDEX_FIELDS = [
   'spend_upp',
   'spend_lower',
   'spend_upper',
+  'spend_low_original',
+  'spend_upp_original',
+  'spend_currency_original',
+  'spend_low_usd',
+  'spend_upp_usd',
+  'spend_range_currency',
   'part_org',
   'pre_pres',
   'lista_sector_candidato',
@@ -57,7 +63,7 @@ function readJson(file, fallback) {
 }
 
 function ensureCleanDir(dir) {
-  if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true })
+  if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
   fs.mkdirSync(dir, { recursive: true })
 }
 

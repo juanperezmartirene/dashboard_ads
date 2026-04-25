@@ -80,6 +80,23 @@ function normalizeEtapa(te) {
   return te
 }
 
+function parseNumber(value) {
+  const parsed = parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function convertSpendToUsd(value, currency, exchangeRate) {
+  const amount = parseNumber(value)
+  return currency === 'UYU' ? amount / exchangeRate : amount
+}
+
+function calculateRangeAverage(low, upp, fallback = 0) {
+  if (low > 0 && upp > 0 && upp !== low) return (low + upp) / 2
+  if (low > 0) return low
+  if (upp > 0) return upp / 2
+  return fallback > 0 ? fallback : 0
+}
+
 // ─── Procesar un registro individual ────────────────────────────────────────
 function processRow(row) {
   // Compute midpoints from bounds when promedio fields are null/missing
@@ -94,17 +111,13 @@ function processRow(row) {
         : lowImp  // Use lower bound if upper is 0 or missing (open-ended range)
       : 0
 
-  const lowGasto = parseFloat(row.spend_low) || parseFloat(row.spend_lower) || 0
-  const uppGasto = parseFloat(row.spend_upp) || parseFloat(row.spend_upper) || 0
-  const rawGasto = row.promedio_gasto != null && row.promedio_gasto > 0
-    ? row.promedio_gasto
-    : lowGasto > 0
-      ? uppGasto > 0 && uppGasto !== lowGasto
-        ? (lowGasto + uppGasto) / 2
-        : lowGasto  // Use lower bound if upper is 0 or missing (open-ended range)
-      : 0
-  const dolar = parseFloat(row.dolar_prom) || 1
-  const gasto = row.currency === 'UYU' ? rawGasto / dolar : rawGasto
+  const lowGastoRaw = parseNumber(row.spend_low) || parseNumber(row.spend_lower)
+  const uppGastoRaw = parseNumber(row.spend_upp) || parseNumber(row.spend_upper)
+  const dolar = parseNumber(row.dolar_prom) || 1
+  const spendLowUsd = convertSpendToUsd(lowGastoRaw, row.currency, dolar)
+  const spendUppUsd = convertSpendToUsd(uppGastoRaw, row.currency, dolar)
+  const fallbackGasto = convertSpendToUsd(row.promedio_gasto, row.currency, dolar)
+  const gasto = calculateRangeAverage(spendLowUsd, spendUppUsd, fallbackGasto)
 
   // Derivar fecha "YYYY-MM" desde ad_delivery_start_time cuando fecha es null
   const fecha = row.fecha || (row.ad_delivery_start_time
@@ -116,6 +129,14 @@ function processRow(row) {
     fecha,
     promedio_impresiones: imp,
     promedio_gasto: gasto,
+    spend_low_original: lowGastoRaw,
+    spend_upp_original: uppGastoRaw,
+    spend_currency_original: row.currency || 'USD',
+    spend_low_usd: spendLowUsd,
+    spend_upp_usd: spendUppUsd,
+    spend_low: spendLowUsd,
+    spend_upp: spendUppUsd,
+    spend_range_currency: 'USD',
     departamento_nacional: DEPTO_MAP[row.departamento_nacional] || row.departamento_nacional || 'Nacional',
     departamento_code: row.departamento_nacional, // keep original code
     text_body: cleanText(row.text_body),

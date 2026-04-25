@@ -67,6 +67,23 @@ const COLS = [
 
 const PAGE_SIZE = 20
 
+function formatUsd(value) {
+  const amount = Number(value) || 0
+  if (amount <= 0) return 'U$S 0'
+  const options = amount < 1
+    ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+    : { maximumFractionDigits: 0 }
+  return `U$S ${amount.toLocaleString('es-UY', options)}`
+}
+
+function formatUsdRange(low, upp) {
+  const hasLow = low != null && Number.isFinite(Number(low))
+  const hasUpp = upp != null && Number.isFinite(Number(upp))
+  if (!hasLow && !hasUpp) return null
+  if (hasLow && hasUpp) return `${formatUsd(low)}-${formatUsd(upp)}`
+  return hasLow ? `desde ${formatUsd(low)}` : `hasta ${formatUsd(upp)}`
+}
+
 // ── Lazy-load adDetails.json (singleton) ──────────────────────────────────────
 
 function useAdDetails(adId) {
@@ -181,8 +198,9 @@ function AdDetail({ row: initialRow, layoutId, onClose }) {
   }
   const fechaInicio = formatDate(row.ad_delivery_start_time)
   const fechaFin    = formatDate(row.ad_delivery_stop_time)
-  const spendLow = row.spend_low ?? row.spend_lower
-  const spendUpp = row.spend_upp ?? row.spend_upper
+  const spendLow = row.spend_low_usd ?? row.spend_low ?? row.spend_lower
+  const spendUpp = row.spend_upp_usd ?? row.spend_upp ?? row.spend_upper
+  const spendRange = formatUsdRange(spendLow, spendUpp)
 
   return (
     <>
@@ -267,11 +285,11 @@ function AdDetail({ row: initialRow, layoutId, onClose }) {
                 <DollarSign className="size-3" /> Gasto est.
               </p>
               <p className="text-sm font-mono font-semibold text-gray-800 mt-0.5">
-                U$S {Math.round(row.promedio_gasto || 0).toLocaleString('es-UY')}
+                {formatUsd(row.promedio_gasto)}
               </p>
-              {(spendLow != null || spendUpp != null) && (
+              {spendRange && (
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Rango: ${spendLow ?? '?'}–${spendUpp ?? '?'}
+                  Rango: {spendRange}
                 </p>
               )}
             </div>
@@ -702,7 +720,7 @@ export default function DataTable({ data }) {
                     {/* Gasto */}
                     <TableCell className="text-sm font-mono text-gray-700 whitespace-nowrap">
                       {row.promedio_gasto > 0
-                        ? `U$S ${Math.round(row.promedio_gasto).toLocaleString('es-UY')}`
+                        ? formatUsd(row.promedio_gasto)
                         : <span className="text-gray-300">—</span>}
                     </TableCell>
 

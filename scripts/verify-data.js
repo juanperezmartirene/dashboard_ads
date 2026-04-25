@@ -26,6 +26,23 @@ const adDetailsManifestPath = path.join(runtimeDir, 'ad-details.manifest.json')
 const errors = []
 const warnings = []
 
+function parseNumber(value) {
+  const parsed = parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function expectedSpendAverageUsd(ad) {
+  const rate = parseNumber(ad.dolar_prom) || 1
+  const low = parseNumber(ad.spend_low_original ?? ad.spend_low)
+  const upp = parseNumber(ad.spend_upp_original ?? ad.spend_upp)
+  const lowUsd = ad.currency === 'UYU' ? low / rate : low
+  const uppUsd = ad.currency === 'UYU' ? upp / rate : upp
+  if (lowUsd > 0 && uppUsd > 0 && lowUsd !== uppUsd) return (lowUsd + uppUsd) / 2
+  if (lowUsd > 0) return lowUsd
+  if (uppUsd > 0) return uppUsd / 2
+  return 0
+}
+
 console.log('\n📊 Verificación de datos\n')
 
 // Verificar conteo
@@ -129,6 +146,19 @@ if (!fs.existsSync(adsIndexPath)) {
   })
   if (runtimeTokenLeaks > 0) {
     errors.push(`❌ Se encontraron ${runtimeTokenLeaks} campos con access_token en public/data/runtime/ads.index.json`)
+  }
+
+  let spendConversionMismatches = 0
+  adsIndex.forEach(ad => {
+    const expected = expectedSpendAverageUsd(ad)
+    const actual = parseNumber(ad.promedio_gasto)
+    const hasRange = parseNumber(ad.spend_low_original) > 0 || parseNumber(ad.spend_upp_original) > 0
+    if (hasRange && Math.abs(actual - expected) > 0.000001) spendConversionMismatches++
+  })
+  if (spendConversionMismatches > 0) {
+    errors.push(`Gasto promedio runtime inconsistente con el rango convertido a USD en ${spendConversionMismatches} anuncios`)
+  } else {
+    console.log(`Gasto runtime convertido a USD y promediado desde rangos`)
   }
 
   const rawSize = fs.statSync(path.join(__dirname, '../public/data/realData.json')).size
